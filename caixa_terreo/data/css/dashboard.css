@@ -1,0 +1,297 @@
+/*dashboard.css */
+/* =====================================================
+   DASHBOARD – CAIXA D'ÁGUA
+   ===================================================== */
+
+/* =====================================================
+   FUNDO E LAYOUT GERAL
+   ===================================================== */
+
+body {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+
+/* =====================================================
+   CARTÕES
+   ===================================================== */
+
+.card {
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  transition: transform 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+.status-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+}
+
+
+/* =====================================================
+   CAIXA D'ÁGUA ANIMADA
+   ===================================================== */
+
+.caixa-container {
+  position: relative;
+  height: 300px;
+  margin: 20px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.caixa {
+  width: 160px;
+  height: 100%;
+  border: 3px solid #1976d2;
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+  background: #e0f7fa;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.agua {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 0%;
+  background: linear-gradient(to top, #007bff, #00bfff);
+  transition: height 1s ease, background 0.5s ease;
+  border-top-left-radius: 50% 20px;
+  border-top-right-radius: 50% 20px;
+  animation: wave 3s infinite linear;
+}
+
+/* Níveis da água */
+.agua.baixo {
+  background: linear-gradient(to top, #dc3545, #e83e8c);
+}
+
+.agua.medio {
+  background: linear-gradient(to top, #ffc107, #fd7e14);
+}
+
+.agua.alto {
+  background: linear-gradient(to top, #28a745, #20c997);
+}
+
+
+/* =====================================================
+   ANIMAÇÕES
+   ===================================================== */
+
+@keyframes wave {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-10px);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+
+/* =====================================================
+   TEXTO CENTRAL DA CAIXA
+   ===================================================== */
+
+.water-percentage {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #007bff;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+
+
+/* =====================================================
+   ESTATÍSTICAS
+   ===================================================== */
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border-left: 4px solid #007bff;
+  transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #007bff;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+
+/* =====================================================
+   ALERTAS
+   ===================================================== */
+
+.alert-status {
+  padding: 15px;
+  border-radius: 10px;
+  margin: 10px 0;
+  font-weight: 600;
+}
+
+.alert-normal {
+  background: #d4edda;
+  color: #155724;
+  border-left: 4px solid #28a745;
+}
+
+.alert-warning {
+  background: #fff3cd;
+  color: #856404;
+  border-left: 4px solid #ffc107;
+}
+
+.alert-danger {
+  background: #f8d7da;
+  color: #721c24;
+  border-left: 4px solid #dc3545;
+}
+
+
+/* =====================================================
+   NAVEGAÇÃO RÁPIDA
+   ===================================================== */
+
+.nav-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 5px;
+  background: #f8f9fa;
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #495057;
+  transition: all 0.3s ease;
+  font-size: 0.8rem;
+}
+
+.nav-btn:hover {
+  background: #007bff;
+  color: #ffffff;
+  border-color: #007bff;
+  transform: translateY(-2px);
+}
+
+.nav-btn div {
+  font-size: 1.2rem;
+  margin-bottom: 4px;
+}
+
+
+/* =====================================================
+   RESPONSIVIDADE
+   ===================================================== */
+
+@media (max-width: 768px) {
+  .caixa-container {
+    height: 250px;
+  }
+
+  .caixa {
+    width: 120px;
+  }
+
+  .water-percentage {
+    font-size: 2rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .nav-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+
+/* =====================================================
+   INDICADOR DE CONEXÃO
+   ===================================================== */
+
+.connection-status {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
+.connection-online {
+  background-color: #28a745;
+  animation: pulse 2s infinite;
+}
+
+.connection-offline {
+  background-color: #dc3545;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}

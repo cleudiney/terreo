@@ -1,0 +1,51 @@
+/* base.css */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: #f0f0f0;
+}
+
+.container {
+  max-width: 900px;
+  margin: 20px auto;
+  padding: 20px;
+}
+
+button.btn {
+  padding: 10px 15px;
+  margin: 5px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn.primary { background: #007bff; color: #fff; }
+.btn.success { background: #28a745; color: #fff; }
+.btn.warning { background: #ffc107; color: #000; }
+.btn.danger  { background: #dc3545; color: #fff; }
+
+.alerta-vazao {
+  background: #b30000;
+  color: #fff;
+  font-weight: bold;
+  text-align: center;
+  padding: 14px;
+  animation: piscar 1s infinite;
+}
+
+.oculto {
+  display: none;
+}
+
+@keyframes piscar {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+

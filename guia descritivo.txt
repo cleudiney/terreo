@@ -1,0 +1,321 @@
+📋 O QUE ESSE ARQUIVO FAZ:
+1. Inclusões e Definições
+Inclui todas bibliotecas necessárias
+
+Define constantes importantes (pinos, caminhos)
+
+2. Estruturas de Dados
+UsuarioWeb: para autenticação
+
+EstadoCaixa: para monitoramento
+
+3. Variáveis Globais
+Credenciais WiFi
+
+Estado do sistema
+
+Objetos principais (server, NTP, etc.)
+
+4. Protótipos de Função
+Todas funções que serão implementadas em outros arquivos
+
+5. Setup (Ordem CRÍTICA)
+Serial - comunicação debug
+
+GPIOs - configura pinos das bombas
+
+SPIFFS - sistema de arquivos (prioridade máxima)
+
+WiFi - conexão de rede
+
+NTP - sincronização de hora
+
+Usuários - banco de dados
+
+Web Server - API e páginas web
+
+6. Loop Principal
+Monitora WiFi - reconecta se cair
+
+Atualiza hora - periodicamente
+
+Processa requisições - servidor web
+
+Simula sensores - para teste (substituir depois)
+
+variaveis.h - Header com declarações
+
+variaveis.cpp - Implementação das variáveis
+
+conexao.ino - WiFi e NTP
+
+spiffs.ino - Sistema de arquivos
+
+usuarios.ino - Autenticação
+
+webserver.ino - Servidor web
+
+🎯 ESTRUTURA FINAL DOS 3 PRIMEIROS ARQUIVOS:
+1. caixa_terreo.ino
+Função: Apenas setup() e loop()
+
+Conteúdo: Sequência de inicialização e loop principal
+
+Não tem: Includes, variáveis globais, implementações
+
+2. variaveis.h
+Função: Declarações (headers)
+
+Conteúdo:
+
+Todos os #include
+
+#define constantes
+
+Estruturas (struct)
+
+Declarações extern de variáveis
+
+Protótipos de função
+
+3. variaveis.cpp
+Função: Definições das variáveis globais
+
+Conteúdo:
+
+Valores das constantes
+
+Instanciação de objetos globais
+
+Implementações simples/imutáveis
+
+usuarios.ino ✅
+Inicialização: inicializarBancoUsuarios() - verifica e conta usuários
+
+Autenticação: autenticarUsuario() - valida credenciais no arquivo
+
+APIs CRUD:
+
+apiListarUsuarios() - GET /api/usuarios
+
+apiCriarUsuario() - POST /api/usuarios
+
+apiExcluirUsuario() - DELETE /api/usuarios
+
+Login/Logout:
+
+processarLogin() - POST /api/login
+
+processarLogout() - POST /api/logout
+
+Segurança: Permissões por nível (admin, sindico)
+
+Registro: Todas ações geram avisos no sistema
+
+Atualizações:
+✅ variaveis.h - Novos protótipos apiCriarUsuario(), apiExcluirUsuario()
+
+✅ variaveis.cpp - Removido array USUARIOS_WEB (agora usamos SPIFFS)
+
+✅ Sistema completo de autenticação baseado em arquivo
+
+
+
+✅ RESUMO DO QUE FOI CRIADO/ATUALIZADO:
+webserver.ino ✅
+Inicialização: inicializarWebServer() - configura tudo
+
+Rotas API: configurarRotasAPI() - todas APIs REST
+
+Rotas estáticas: configurarRotasEstaticas() - serve HTML/CSS/JS
+
+CORS: Headers para desenvolvimento
+
+404 personalizado: Tratamento de rotas não encontradas
+
+APIs implementadas:
+✅ /api/login - POST
+
+✅ /api/logout - POST
+
+✅ /api/usuarios - GET, POST, DELETE
+
+✅ /api/avisos - GET (placeholder)
+
+✅ /api/status - GET (info do sistema)
+
+✅ /api/bombas/ligar/A - POST
+
+✅ /api/bombas/ligar/B - POST
+
+✅ /api/bombas/desligar - POST
+
+✅ RESUMO DO QUE FOI CRIADO/ATUALIZADO:
+avisos.ino ✅
+Registro: registrarAviso() - função principal com formatação
+
+API: apiListarAvisos() - GET /api/avisos
+
+Funções convencionais:
+
+registrarAvisoLogin(), registrarAvisoLoginFalha(), registrarAvisoLogout()
+
+registrarAvisoBomba(), registrarAvisoNivelCritico(), registrarAvisoNivelNormal()
+
+Utilitários: contarAvisos(), limparAvisosAntigos()
+
+Inicialização: inicializarSistemaAvisos() - registra boot e conta avisos
+
+bombas.ino ✅ (parcial)
+Controle manual: ligarBombaA(), ligarBombaB(), desligarBombas()
+
+Controle automático: controleAutomaticoBombas() - lógica simples
+
+Atualizações:
+✅ variaveis.h - Novo protótipo inicializarSistemaAvisos()
+
+✅ caixa_terreo.ino - Adicionada chamada para inicializar avisos
+
+✅ usuarios.ino - Atualizadas chamadas para usar funções convencionais
+
+✅ webserver.ino - Atualizadas chamadas para usar funções convencionais
+
+📊 ESTADO ATUAL DO SISTEMA:
+Arquivos completos:
+✅ caixa_terreo.ino - Principal
+
+✅ variaveis.h - Header com todas declarações
+
+✅ variaveis.cpp - Variáveis globais
+
+✅ conexao.ino - WiFi + NTP
+
+✅ spiffs.ino - Sistema de arquivos
+
+✅ usuarios.ino - Autenticação + CRUD
+
+✅ webserver.ino - Servidor web + rotas
+
+✅ avisos.ino - Sistema de avisos/eventos
+
+✅ bombas.ino - Controle de bombas (parcial)
+
+Funcionalidades implementadas:
+✅ Sistema de arquivos SPIFFS
+
+✅ WiFi + AP de fallback
+
+✅ NTP (tempo real)
+
+✅ Autenticação com arquivo
+
+✅ CRUD de usuários
+
+✅ APIs REST completas
+
+✅ Sistema de avisos/registros
+
+✅ Controle manual de bombas
+
+✅ Páginas web estáticas
+
+🎯 PRÓXIMO PASSOS:
+Qual funcionalidade você quer implementar agora?
+
+Completar bombas.ino com lógica automática avançada
+
+sensores.ino - Leitura real de sensores (ultrassom, vazão)
+
+estado_caixa.ino - Gerenciamento do estado da caixa
+
+Testar e depurar o sistema atual
+
+Ou quer adicionar algo específico?
+
+
+
+✅ RESUMO DO QUE FOI CRIADO/ATUALIZADO:
+bombas.ino ✅ COMPLETO
+Controle manual: ligarBombaA(), ligarBombaB(), desligarBombas(), ligarBombasAB()
+
+Controle automático: controleAutomaticoBombas() - lógica completa
+
+Segurança: verificarSegurancaBombas() - proteções
+
+Inicialização: inicializarControleBombas() - setup
+
+Utilitários: statusBombas(), resetTempoBombas()
+
+Características implementadas:
+✅ Tempo máximo (5 minutos) - proteção contra superaquecimento
+
+✅ Tempo mínimo (30 segundos) - proteção contra ciclagem rápida
+
+✅ Alternância automática entre bombas (2 minutos)
+
+✅ Lógica automática baseada em nível da caixa
+
+✅ Proteção contra ambas bombas ligadas sem necessidade
+
+✅ Modo emergência (ligar ambas)
+
+Atualizações:
+✅ variaveis.h - Novos protótipos e definições de bombas
+
+✅ variaveis.cpp - Variáveis de controle de tempo das bombas
+
+✅ caixa_terreo.ino - Adicionadas chamadas no setup e loop
+
+📝 INFORMAÇÃO GUARDADA:
+sensores.ino → apenas declarações → vai para variaveis.h/cpp
+
+Funcionalidades separadas: ultrassom.ino, vazao.ino, leds.ino, chaves.ino
+
+🎯 PRÓXIMO PASSO:
+Agora com bombas completas, qual você prefere?
+
+estado_caixa.ino - Gerenciamento do estado da caixa (lógica central)
+
+Adicionar sensores em variaveis.h/cpp - Declarações de pinos/variáveis
+
+ultrassom.ino - Leitura do sensor de nível (HC-SR04 ou similar)
+
+Recomendo estado_caixa.ino para criar a lógica central antes dos sensores específicos.
+
+
+
+📋 CHECKLIST DE CONSISTÊNCIA:
+✅ Todas as marcações agora estão consistentes:
+[USADO EM: arquivo - linha X] - formato padrão
+
+Sem marcações duplicadas
+
+Todas as funções implementadas têm suas referências
+
+Todas as variáveis têm suas referências de uso
+
+✅ Arquivos atualizados com marcações corretas:
+✅ variaveis.h - MARCAÇÕES COMPLETAS E CONSISTENTES
+
+✅ variaveis.cpp - COMPLETO
+
+✅ bombas.ino - JÁ TEMOS (completo)
+
+✅ usuarios.ino - JÁ TEMOS (atualizado)
+
+✅ webserver.ino - JÁ TEMOS (atualizado)
+
+✅ avisos.ino - JÁ TEMOS
+
+✅ conexao.ino - JÁ TEMOS
+
+✅ spiffs.ino - JÁ TEMOS
+
+✅ caixa_terreo.ino - JÁ TEMOS
+
+✅ ultrassom.ino - Sensor de nível REAL
+
+✅ Sistema ainda funciona em modo simulação (loop antigo)
+
+✅ Podemos testar com sensor real quando quiser
+

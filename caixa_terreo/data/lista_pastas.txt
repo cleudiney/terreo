@@ -1,0 +1,57 @@
+﻿[PASTA]   data
+  avisos.ino - 6386 bytes
+  bombas.ino - 4447 bytes
+  caixa_terreo.ino - 3709 bytes
+  chaves.ino - 16039 bytes
+  conexao.ino - 1919 bytes
+  estado_caixa.ino - 5492 bytes
+  leds.ino - 11858 bytes
+  sensores.ino - 5709 bytes
+  spiffs.ino - 6020 bytes
+  ultrassom.ino - 8562 bytes
+  usuarios.ino - 10593 bytes
+  variaveis.cpp - 1427 bytes
+  variaveis.h - 4938 bytes
+  vazao.ino - 11653 bytes
+  webserver.ino - 10264 bytes
+[PASTA]     css
+[PASTA]     dados
+[PASTA]     js
+[PASTA]     partials
+    .DS_Store - 6160 bytes
+    adm.html - 4709 bytes
+    admin.html - 2611 bytes
+    avisos.html - 4094 bytes
+    estatisticas.html - 2699 bytes
+    historico.html - 1854 bytes
+    index.html - 4271 bytes
+    lista_pastas.txt - 0 bytes
+    login-localstorage.html - 2950 bytes
+    login-zero.html - 203 bytes
+    login.html - 198 bytes
+    pontos.html - 2286 bytes
+    registros.html - 26 bytes
+      admin.css - 351 bytes
+      arquivos.txt - 446 bytes
+      base.css - 562 bytes
+      bootstrap-grid.css - 37644 bytes
+      bootstrap.min.css - 140936 bytes
+      login-localstorage.css - 380 bytes
+      navbar.css - 1084 bytes
+      style.css - 1043 bytes
+      admin.js - 5578 bytes
+      arquivos.txt - 704 bytes
+      auth-guard.js - 1387 bytes
+      avisos.js - 791 bytes
+      data-loader.js - 2537 bytes
+      jquery-3.7.1.min.js - 87533 bytes
+      lista_completa.txt - 0 bytes
+      login-localstorage.js - 2010 bytes
+      navbar-guard.js - 718 bytes
+      navbar.js - 1562 bytes
+      nivel-badge.js - 810 bytes
+      popper.min.js - 21233 bytes
+      script.js - 11 bytes
+      sw.js - 754 bytes
+      ui-guard.js - 1210 bytes
+      navbar.html - 843 bytes

@@ -1,0 +1,173 @@
+<!-- adm.html -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Administração - Caixa d'Água</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Bootstrap LOCAL (offline) -->
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+  <!-- CSS global -->
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/navbar.css">
+
+  <style>
+    body {
+      background: #f0f2f5;
+    }
+    .container {
+      max-width: 900px;
+    }
+    .card {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <div id="navbar"></div>
+
+  <!-- CONTEÚDO -->
+  <div class="container mt-4">
+
+    <h2 class="mb-4">⚙️ Administração do Sistema</h2>
+
+    <!-- Wi-Fi -->
+    <div class="card">
+      <div class="card-header fw-bold">📡 Configuração de Wi-Fi</div>
+      <div class="card-body">
+
+        <button class="btn btn-outline-primary mb-3" onclick="scanWifi()">
+          🔍 Buscar redes
+        </button>
+
+        <select id="wifiList" class="form-select mb-2"></select>
+
+        <input
+          type="password"
+          id="wifiPass"
+          class="form-control mb-2"
+          placeholder="Senha da rede">
+
+        <button class="btn btn-success" onclick="connectWifi()">
+          🔗 Conectar
+        </button>
+
+        <div id="wifiMsg" class="mt-2 text-muted"></div>
+      </div>
+    </div>
+
+    <!-- Senhas -->
+    <div class="card">
+      <div class="card-header fw-bold">🔐 Gerenciar Senhas</div>
+      <div class="card-body">
+
+        <div class="mb-3">
+          <label class="form-label">Administrador</label>
+          <input type="password" id="passAdmin" class="form-control mb-2">
+          <button class="btn btn-warning" onclick="setPassword('admin')">
+            Alterar senha
+          </button>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Síndico / Zelador</label>
+          <input type="password" id="passSindico" class="form-control mb-2">
+          <button class="btn btn-warning" onclick="setPassword('sindico')">
+            Alterar senha
+          </button>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Visitante</label>
+          <input type="password" id="passVisitante" class="form-control mb-2">
+          <button class="btn btn-warning" onclick="setPassword('visitante')">
+            Alterar senha
+          </button>
+        </div>
+
+        <div id="passMsg" class="mt-2"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- JS LOCAL -->
+  <script src="/js/jquery-3.7.1.min.js"></script>
+  <script src="/js/popper.min.js"></script>
+  <script src="/js/bootstrap.min.js"></script>
+
+  <!-- Navbar -->
+  <script src="/js/navbar.js"></script>
+  <script src="/js/nivel-badge.js"></script>
+
+  <!-- Segurança -->
+  <script src="/js/auth-guard.js"></script>
+  <script>
+    // Admin e Síndico podem acessar
+    protegerPagina(['admin', 'sindico']);
+  </script>
+
+  <!-- JS da página -->
+  <script>
+    function scanWifi() {
+      fetch('/api/wifi-scan')
+        .then(r => r.json())
+        .then(list => {
+          const sel = document.getElementById('wifiList');
+          sel.innerHTML = '';
+          list.forEach(w => {
+            const opt = document.createElement('option');
+            opt.value = w.ssid;
+            opt.innerText = `${w.ssid} (${w.rssi} dBm)`;
+            sel.appendChild(opt);
+          });
+        })
+        .catch(() => {
+          document.getElementById('wifiMsg').innerText = 'Erro ao buscar redes.';
+        });
+    }
+
+    function connectWifi() {
+      const ssid  = document.getElementById('wifiList').value;
+      const senha = document.getElementById('wifiPass').value;
+
+      fetch('/api/wifi-connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ssid, senha })
+      })
+      .then(r => r.json())
+      .then(res => {
+        document.getElementById('wifiMsg').innerText =
+          res.ok ? '✅ Conectado com sucesso' : '❌ Falha ao conectar';
+      });
+    }
+
+    function setPassword(tipo) {
+      const campo = {
+        admin: 'passAdmin',
+        sindico: 'passSindico',
+        visitante: 'passVisitante'
+      }[tipo];
+
+      const senha = document.getElementById(campo).value;
+
+      fetch('/api/set-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo, senha })
+      })
+      .then(r => r.json())
+      .then(res => {
+        document.getElementById('passMsg').innerText =
+          res.ok ? '✅ Senha alterada' : '❌ Erro ao alterar senha';
+      });
+    }
+  </script>
+
+</body>
+</html>

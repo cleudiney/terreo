@@ -1,0 +1,440 @@
+<!--Index.html  -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor Caixa d'Água</title>
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar-brand {
+            font-weight: 600;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .status-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        }
+        
+        /* Tanque de água animado */
+        .caixa-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .caixa {
+            width: 160px;
+            height: 100%;
+            border: 3px solid #1976d2;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            background: #e0f7fa;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .agua {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(to top, #007bff, #00bfff);
+            transition: height 1s ease, background 0.5s ease;
+            border-top-left-radius: 50% 20px;
+            border-top-right-radius: 50% 20px;
+            animation: wave 3s infinite linear;
+        }
+        
+        /* Cores baseadas no nível */
+        .agua.baixo { background: linear-gradient(to top, #dc3545, #e83e8c); }
+        .agua.medio { background: linear-gradient(to top, #ffc107, #fd7e14); }
+        .agua.alto { background: linear-gradient(to top, #28a745, #20c997); }
+        
+        /* Animação da ondinha */
+        @keyframes wave {
+            from { transform: translateX(0); }
+            to { transform: translateX(-10px); }
+        }
+        
+        .water-percentage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #007bff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            z-index: 2;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #007bff;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .btn-bomba {
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 12px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-bomba-1 {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+        }
+        
+        .btn-bomba-2 {
+            background: linear-gradient(135deg, #ffc107, #fd7e14);
+            color: white;
+        }
+        
+        .btn-bomba-emergencia {
+            background: linear-gradient(135deg, #dc3545, #e83e8c);
+            color: white;
+        }
+        
+        .btn-bomba:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn-bomba:active {
+            transform: scale(0.95);
+        }
+        
+        .btn-bomba.active {
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.5);
+        }
+        
+        .alert-status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .alert-normal {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .last-update {
+            font-size: 0.8rem;
+            color: #6c757d;
+            text-align: center;
+            margin-top: 10px;
+        }
+        
+        /* Navbar melhorada */
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 5px;
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #495057;
+            transition: all 0.3s ease;
+            font-size: 0.8rem;
+        }
+        
+        .nav-btn:hover {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+        
+        .nav-btn div {
+            font-size: 1.2rem;
+            margin-bottom: 4px;
+        }
+        
+        /* Animações */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .caixa-container {
+                height: 250px;
+            }
+            
+            .caixa {
+                width: 120px;
+            }
+            
+            .water-percentage {
+                font-size: 2rem;
+            }
+            
+            .btn-bomba {
+                font-size: 1rem;
+                padding: 10px 15px;
+                margin: 3px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .nav-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        /* Indicador de conexão */
+        .connection-status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .connection-online {
+            background-color: #28a745;
+            animation: pulse 2s infinite;
+        }
+        
+        .connection-offline {
+            background-color: #dc3545;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <span class="connection-status" id="connectionStatus"></span>
+                💧 Monitor Caixa d'Água
+            </a>
+            <div class="navbar-nav ml-auto d-flex align-items-center">
+                <span class="navbar-text mr-3" id="userInfo">
+                    👤 -- 
+                </span>
+                <span class="navbar-text mr-3" id="currentTime">
+                    ⏰ --:--
+                </span>
+                <button class="nav-link btn btn-outline-light btn-sm ml-2" id="logoutBtn">
+                    🚪 Sair
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- Cartão Principal -->
+        <div class="card status-card">
+            <div class="card-body">
+                <h4 class="card-title text-center mb-4">
+                    📊 Status em Tempo Real
+                </h4>
+                
+                <!-- Tanque de Água Animado -->
+                <div class="caixa-container">
+                    <div class="caixa">
+                        <div class="agua" id="agua"></div>
+                    </div>
+                    <div class="water-percentage" id="waterPercentage">--%</div>
+                </div>
+                
+                <!-- Estatísticas -->
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="nivelValue">--</div>
+                        <div class="stat-label">Nível (cm)</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="volumeValue">--</div>
+                        <div class="stat-label">Volume (L)</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="bombaStatus">--</div>
+                        <div class="stat-label">Status Bomba</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="emergenciaStatus">--</div>
+                        <div class="stat-label">Emergência</div>
+                    </div>
+					<div>
+						<div id="statusVazao">--</div>
+						<div id="tempoEstimado"></div>
+					</div>
+                </div>
+                
+                <!-- Status de Alerta -->
+                <div class="alert-status alert-normal" id="alertStatus">
+                    ✅ Sistema operando normalmente
+                </div>
+				<div id="alertaVazao" class="alerta-vazao oculto">
+				  🚨 ATENÇÃO: sem fornecimento de água!  
+				  Verifique COPASA ou o registro geral.
+				</div>
+
+                <div class="text-center mt-3">
+                    <button class="btn btn-primary btn-lg" id="medirBtn">
+                        📏 Medir Agora
+                    </button>
+                </div>
+                
+                <div class="last-update" id="lastUpdate">
+                    Última atualização: --
+                </div>
+            </div>
+        </div>
+
+        <!-- Controles das Bombas 
+        <div class="card" id="bombaControls">
+            <div class="card-body">
+                <h5 class="card-title text-center">🎛️ Controle de Bombas</h5>
+                <div class="text-center">
+                    <button class="btn btn-bomba btn-bomba-1" id="bomba1Btn">
+                        🔧 Bomba 1.5CV
+                    </button>
+                    <button class="btn btn-bomba btn-bomba-2" id="bomba2Btn">
+                        🔧 Bomba 3CV
+                    </button>
+                    <button class="btn btn-bomba btn-bomba-emergencia" id="emergenciaBtn">
+                        🚨 Ambas Bombas
+                    </button>
+                    <button class="btn btn-secondary" id="desligarBtn">
+                        ⏹️ Desligar Todas
+                    </button>
+                </div>
+                <div class="text-center mt-2">
+                    <small class="text-muted" id="permissoesInfo">
+                        Apenas administradores, síndicos e sub-síndicos podem controlar bombas
+                    </small>
+                </div>
+            </div>
+        </div>
+-->
+        <!-- Navegação Melhorada -->
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title text-center mb-3">📋 Navegação Rápida</h6>
+                <div class="nav-grid">
+                    <a href="index.html" class="nav-btn active">
+                        <div>🏠</div>
+                        <small>Principal</small>
+                    </a>
+                    <a href="estatisticas.html" class="nav-btn">
+                        <div>📊</div>
+                        <small>Estatísticas</small>
+                    </a>
+                    <a href="historico.html" class="nav-btn">
+                        <div>📅</div>
+                        <small>Histórico</small>
+                    </a>
+                    <a href="pontos.html" class="nav-btn">
+                        <div>📋</div>
+                        <small>Pontos</small>
+                    </a>
+                    <a href="avisos.html" class="nav-btn">
+                        <div>⚠️</div>
+                        <small>Avisos</small>
+                    </a>
+                    <a href="adm.html" class="nav-btn">
+                        <div>⚙️</div>
+                        <small>Admin</small>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/jquery-3.7.1.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+	<script src="/js/dashboard.js"></script>
+   </body>
+</html>

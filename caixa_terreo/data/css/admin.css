@@ -1,0 +1,31 @@
+/* /data/dados/css/admin.css */
+
+body {
+  padding: 20px;
+  background-color: #f8f9fa;
+}
+
+.inativo {
+  opacity: 0.5;
+}
+
+table th,
+table td {
+  vertical-align: middle;
+}
+
+.table {
+  background-color: #ffffff;
+}
+
+.card {
+  border-radius: 8px;
+}
+
+.card-title {
+  margin-bottom: 15px;
+}
+
+button.btn-sm {
+  min-width: 40px;
+}

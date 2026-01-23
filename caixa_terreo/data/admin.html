@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Administração de Usuários</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Bootstrap -->
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+
+<div class="container mt-4">
+
+  <h3 class="mb-1">👥 Administração de Usuários</h3>
+  <p class="text-muted">Acesso restrito a admin e síndico</p>
+
+  <div id="erro" class="alert alert-danger d-none"></div>
+  <div id="sucesso" class="alert alert-success d-none"></div>
+
+  <!-- FORM -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-body">
+      <h5 class="card-title">Novo / Editar Usuário</h5>
+
+      <div class="row g-2">
+        <div class="col-md-3">
+          <input id="usuario" class="form-control" placeholder="Usuário">
+        </div>
+
+        <div class="col-md-3">
+          <input id="senha" class="form-control" placeholder="Senha">
+        </div>
+
+        <div class="col-md-3">
+          <select id="nivel" class="form-select">
+            <option value="">Nível</option>
+            <option value="admin">admin</option>
+            <option value="sindico">sindico</option>
+            <option value="morador">morador</option>
+          </select>
+        </div>
+
+        <div class="col-md-3 d-grid">
+          <button class="btn btn-primary" onclick="salvarUsuario()">
+            💾 Salvar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABELA -->
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th>Usuário</th>
+          <th>Nível</th>
+          <th>Status</th>
+          <th class="text-center">Ações</th>
+        </tr>
+      </thead>
+      <tbody id="listaUsuarios"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script src="/js/admin.js"></script>
+<div class="modal fade" id="modalStatus" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalTitulo"></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="modalMensagem"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Fechar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

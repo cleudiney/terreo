@@ -1,0 +1,35 @@
+<!-- navbar.html -->
+<nav class="navbar">
+  <div class="navbar-left">
+    <span class="navbar-brand">💧 Caixa d'Água</span>
+  </div>
+
+  <div class="navbar-right">
+    <span id="navbarUser" class="navbar-user"></span>
+
+    <!-- Badge de nível -->
+    <span id="nivelBadge" class="badge ms-2"></span>
+
+    <button class="navbar-toggle" id="navbarToggle">
+      ☰
+    </button>
+  </div>
+
+  <ul class="navbar-menu" id="navbarMenu">
+    <li data-level="admin,operador">
+      <a href="/index.html">Dashboard</a>
+    </li>
+
+    <li data-level="admin">
+      <a href="/adm.html">Administração</a>
+    </li>
+
+    <li data-level="admin,operador">
+      <a href="/controle.html">Controle de Bombas</a>
+    </li>
+
+    <li data-level="all">
+      <a href="#" onclick="logout()">Sair</a>
+    </li>
+  </ul>
+</nav>

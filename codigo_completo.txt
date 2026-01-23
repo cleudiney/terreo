@@ -1,0 +1,3033 @@
+﻿
+=== C:\Users\Ailton\Documents\Arduino\terreo\caixa_terreo\avisos.ino ===
+
+// avisos.ino
+#include "variaveis.h"
+
+// ===================== REGISTRAR AVISO =====================
+void registrarAviso(String tipo, String mensagem, String usuario) {
+  // [USADO EM: variaveis.h - linha 80 (protótipo)]
+  // [USADO EM: usuarios.ino - linha 64,115,186,237; webserver.ino - linha 100,118,136]
+  
+  if (usuario.isEmpty() && autenticado) {
+    usuario = usuarioLogado;  // [USADO EM: variaveis.cpp - linha 26]
+  }
+  
+  // Obter data/hora atual
+  String dataHora = getDataHoraAtual();  // [USADO EM: variaveis.cpp - linha 49]
+  
+  // Abrir arquivo de avisos (append)
+  File file = SPIFFS.open(ARQ_AVISOS, FILE_APPEND);  // [USADO EM: variaveis.h - linha 7]
+  
+  if (!file) {
+    Serial.println("❌ Falha ao abrir avisos.dat para registro");
+    return;
+  }
+  
+  // Formato: datahora|tipo|mensagem|usuario
+  file.printf("%s|%s|%s|%s\n", 
+              dataHora.c_str(),
+              tipo.c_str(),
+              mensagem.c_str(),
+              usuario.c_str());
+  
+  file.close();
+  
+  // Log no serial
+  Serial.printf("📝 AVISO [%s]: %s - %s (por: %s)\n",
+                tipo.c_str(),
+                dataHora.c_str(),
+                mensagem.c_str(),
+                usuario.isEmpty() ? "sistema" : usuario.c_str());
+}
+
+// ===================== API: LISTAR AVISOS =====================
+void apiListarAvisos() {
+  // [USADO EM: variaveis.h - linha 73 (protótipo)]
+  // [USADO EM: webserver.ino - linha 44 (chamada)]
+  
+  Serial.println("📋 API: Listar avisos chamada");
+  
+  // Verificar autenticação
+  if (!autenticado) {
+    server.send(401, "application/json", "{\"erro\":\"Não autenticado\"}");
+    return;
+  }
+  
+  // Verificar permissão (admin, sindico e subsindico podem ver)
+  if (nivelAcessoLogado != "admin" && 
+      nivelAcessoLogado != "sindico" && 
+      nivelAcessoLogado != "subsindico") {
+    server.send(403, "application/json", "{\"erro\":\"Permissão negada\"}");
+    return;
+  }
+  
+  // Verificar se arquivo existe
+  if (!SPIFFS.exists(ARQ_AVISOS)) {
+    server.send(200, "application/json", "[]");
+    return;
+  }
+  
+  // Abrir arquivo
+  File file = SPIFFS.open(ARQ_AVISOS, FILE_READ);
+  if (!file) {
+    server.send(500, "application/json", "{\"erro\":\"Falha ao abrir arquivo\"}");
+    return;
+  }
+  
+  // Ler e parsear avisos
+  DynamicJsonDocument doc(4096);  // Ajuste conforme necessidade
+  JsonArray avisos = doc.to<JsonArray>();
+  
+  // Ler linha por linha (do mais recente para o mais antigo)
+  // Para isso, precisamos ler tudo e depois inverter, ou usar buffer
+  // Vamos ler e adicionar na ordem, o front-end pode ordenar
+  
+  while (file.available()) {
+    String linha = file.readStringUntil('\n');
+    linha.trim();
+    
+    if (linha.isEmpty()) continue;
+    
+    // Parsear formato: datahora|tipo|mensagem|usuario
+    int p1 = linha.indexOf('|');
+    int p2 = linha.indexOf('|', p1 + 1);
+    int p3 = linha.indexOf('|', p2 + 1);
+    
+    if (p1 == -1 || p2 == -1 || p3 == -1) continue;
+    
+    JsonObject aviso = avisos.createNestedObject();
+    aviso["datahora"] = linha.substring(0, p1);
+    aviso["tipo"] = linha.substring(p1 + 1, p2);
+    aviso["mensagem"] = linha.substring(p2 + 1, p3);
+    aviso["usuario"] = linha.substring(p3 + 1);
+  }
+  
+  file.close();
+  
+  // Converter para JSON
+  String resposta;
+  serializeJson(doc, resposta);
+  
+  // Enviar resposta
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.send(200, "application/json", resposta);
+}
+
+// ===================== LIMPAR AVISOS ANTIGOS =====================
+void limparAvisosAntigos(int diasManter) {
+  // [NOVA FUNÇÃO - manutenção automática]
+  
+  if (!SPIFFS.exists(ARQ_AVISOS)) {
+    return;
+  }
+  
+  // Para simplificar, em um sistema real precisaríamos:
+  // 1. Ler todos os avisos
+  // 2. Filtrar por data
+  // 3. Reescrever arquivo com apenas os recentes
+  
+  // Por enquanto, apenas logamos a necessidade
+  Serial.printf("⚠️ Manutenção: Avisos com mais de %d dias devem ser limpos\n", diasManter);
+  Serial.println("💡 Implementar lógica de parse de datas para limpeza automática");
+}
+
+// ===================== CONTADOR DE AVISOS =====================
+int contarAvisos() {
+  // [FUNÇÃO UTILITÁRIA - não declarada no header]
+  
+  if (!SPIFFS.exists(ARQ_AVISOS)) {
+    return 0;
+  }
+  
+  File file = SPIFFS.open(ARQ_AVISOS, FILE_READ);
+  if (!file) {
+    return 0;
+  }
+  
+  int count = 0;
+  while (file.available()) {
+    String linha = file.readStringUntil('\n');
+    linha.trim();
+    if (!linha.isEmpty()) {
+      count++;
+    }
+  }
+  
+  file.close();
+  return count;
+}
+
+// ===================== TIPOS DE AVISO PRÉ-DEFINIDOS =====================
+void registrarAvisoLogin(String usuario) {
+  // [FUNÇÃO CONVENCIONAL - facilita registro padronizado]
+  registrarAviso("login", "Login realizado no sistema", usuario);
+}
+
+void registrarAvisoLoginFalha(String usuario) {
+  registrarAviso("login_falha", "Tentativa de login inválida", usuario);
+}
+
+void registrarAvisoLogout(String usuario) {
+  registrarAviso("logout", "Logout realizado", usuario);
+}
+
+void registrarAvisoBomba(String bomba, String acao, String usuario) {
+  String mensagem = String("Bomba ") + bomba + " " + acao;
+  registrarAviso("controle_bomba", mensagem, usuario);
+}
+
+void registrarAvisoNivelCritico(float nivel) {
+  String mensagem = String("Nível crítico: ") + nivel + "%";
+  registrarAviso("critico", mensagem, "sistema");
+}
+
+void registrarAvisoNivelNormal(float nivel) {
+  String mensagem = String("Nível normalizado: ") + nivel + "%";
+  registrarAviso("normalizado", mensagem, "sistema");
+}
+
+// ===================== INICIALIZAÇÃO DO SISTEMA DE AVISOS =====================
+void inicializarSistemaAvisos() {
+  // [NOVA FUNÇÃO - chamar no setup principal]
+  
+  Serial.print("📝 Inicializando sistema de avisos... ");
+  
+  // Registrar aviso de boot do sistema
+  registrarAviso("sistema", "Sistema inicializado/reboot", "sistema");
+  
+  // Contar avisos existentes
+  int total = contarAvisos();
+  Serial.printf("✅ OK (%d avisos registrados)\n", total);
+  
+  // Sugerir limpeza se houver muitos avisos
+  if (total > 1000) {
+    Serial.println("⚠️ Muitos avisos no arquivo. Considere limpar avisos antigos.");
+  }
+}
+
+
+
+=== C:\Users\Ailton\Documents\Arduino\terreo\caixa_terreo\bombas.ino ===
+
+// bombas.ino
+#include "variaveis.h"
+
+// ===================== CONTROLE MANUAL DAS BOMBAS =====================
+void ligarBombaA() {
+  if (estadoAtual.bombaAAtiva) {
+    Serial.println("⚠️ Bomba A já está ligada");
+    return;
+  }
+  
+  digitalWrite(PINO_BOMBA_A, HIGH);
+  estadoAtual.bombaAAtiva = true;
+  tempoLigadaBombaA = millis();
+  
+  Serial.println("🔧 Bomba A ligada manualmente");
+  registrarAviso("controle", "Bomba A ligada manualmente", usuarioLogado);
+}
+
+void ligarBombaB() {
+  if (estadoAtual.bombaBAtiva) {
+    Serial.println("⚠️ Bomba B já está ligada");
+    return;
+  }
+  
+  digitalWrite(PINO_BOMBA_B, HIGH);
+  estadoAtual.bombaBAtiva = true;
+  tempoLigadaBombaB = millis();
+  
+  Serial.println("🔧 Bomba B ligada manualmente");
+  registrarAviso("controle", "Bomba B ligada manualmente", usuarioLogado);
+}
+
+void desligarBombas() {
+  bool algumaDesligada = false;
+  
+  if (estadoAtual.bombaAAtiva) {
+    digitalWrite(PINO_BOMBA_A, LOW);
+    estadoAtual.bombaAAtiva = false;
+    algumaDesligada = true;
+  }
+  
+  if (estadoAtual.bombaBAtiva) {
+    digitalWrite(PINO_BOMBA_B, LOW);
+    estadoAtual.bombaBAtiva = false;
+    algumaDesligada = true;
+  }
+  
+  if (algumaDesligada) {
+    Serial.println("🔧 Bombas desligadas");
+    registrarAviso("controle", "Bombas desligadas manualmente", usuarioLogado);
+  }
+}
+
+// ===================== CONTROLE AUTOMÁTICO =====================
+void controleAutomaticoBombas() {
+  unsigned long agora = millis();
+  
+  // 1. VERIFICAÇÃO DE TEMPO MÁXIMO LIGADA
+  if (estadoAtual.bombaAAtiva && (agora - tempoLigadaBombaA > TEMPO_MAXIMO_LIGADA)) {
+    Serial.println("⚠️ Bomba A excedeu tempo máximo, desligando...");
+    digitalWrite(PINO_BOMBA_A, LOW);
+    estadoAtual.bombaAAtiva = false;
+    registrarAviso("seguranca", "Bomba A desligada por tempo máximo", "sistema");
+  }
+  
+  if (estadoAtual.bombaBAtiva && (agora - tempoLigadaBombaB > TEMPO_MAXIMO_LIGADA)) {
+    Serial.println("⚠️ Bomba B excedeu tempo máximo, desligando...");
+    digitalWrite(PINO_BOMBA_B, LOW);
+    estadoAtual.bombaBAtiva = false;
+    registrarAviso("seguranca", "Bomba B desligada por tempo máximo", "sistema");
+  }
+  
+  // 2. ALTERNÂNCIA DE BOMBAS
+  if (!estadoAtual.bombaAAtiva && !estadoAtual.bombaBAtiva) {
+    if (estadoAtual.nivelPercentual < 30) {
+      if (agora - ultimaAlternancia > INTERVALO_ALTERNANCIA) {
+        bombaPrimaria = !bombaPrimaria;
+        ultimaAlternancia = agora;
+      }
+      
+      if (bombaPrimaria) {
+        ligarBombaA();
+        registrarAviso("automacao", "Bomba A ligada automaticamente", "sistema");
+      } else {
+        ligarBombaB();
+        registrarAviso("automacao", "Bomba B ligada automaticamente", "sistema");
+      }
+    }
+  }
+  
+  // 3. DESLIGAR QUANDO NÍVEL ALTO
+  if ((estadoAtual.bombaAAtiva || estadoAtual.bombaBAtiva) && 
+      estadoAtual.nivelPercentual > 80) {
+    desligarBombas();
+    registrarAviso("automacao", "Bombas desligadas automaticamente", "sistema");
+  }
+}
+
+// ===================== LIGAR AMBAS AS BOMBAS =====================
+void ligarBombasAB() {
+  Serial.println("🔧 Ligando ambas as bombas");
+  
+  ligarBombaA();
+  delay(100);
+  ligarBombaB();
+  
+  registrarAviso("emergencia", "Ambas as bombas ligadas", usuarioLogado);
+}
+
+// ===================== VERIFICAÇÃO DE SEGURANÇA =====================
+void verificarSegurancaBombas() {
+  if (estadoAtual.bombaAAtiva && estadoAtual.bombaBAtiva) {
+    unsigned long tempoAmbasLigadas = millis() - max(tempoLigadaBombaA, tempoLigadaBombaB);
+    
+    if (tempoAmbasLigadas > 60000 && estadoAtual.nivelPercentual > 60) {
+      Serial.println("🔧 Desligando bomba B (nível adequado)");
+      digitalWrite(PINO_BOMBA_B, LOW);
+      estadoAtual.bombaBAtiva = false;
+      registrarAviso("seguranca", "Bomba B desligada para economia", "sistema");
+    }
+  }
+}
+
+// ===================== INICIALIZAÇÃO =====================
+void inicializarControleBombas() {
+  Serial.println("🔧 Inicializando controle de bombas...");
+  
+  digitalWrite(PINO_BOMBA_A, LOW);
+  digitalWrite(PINO_BOMBA_B, LOW);
+  estadoAtual.bombaAAtiva = false;
+  estadoAtual.bombaBAtiva = false;
+  
+  tempoLigadaBombaA = 0;
+  tempoLigadaBombaB = 0;
+  ultimaAlternancia = 0;
+  bombaPrimaria = true;
+  
+  Serial.println("✅ Controle de bombas inicializado");
+}
+
+
+
+=== C:\Users\Ailton\Documents\Arduino\terreo\caixa_terreo\caixa_terreo.ino ===
+
+// caixa_terreo.ino
+// Arquivo PRINCIPAL - apenas setup() e loop()
+
+#include "variaveis.h"
+
+// ===================== SETUP =====================
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+  
+  Serial.println("\n=== Sistema Caixa d'Água ESP32 ===");
+  
+  // 1. Inicializar GPIOs
+  Serial.println("⚙️ Inicializando GPIOs...");
+  pinMode(PINO_BOMBA_A, OUTPUT);
+  pinMode(PINO_BOMBA_B, OUTPUT);
+  digitalWrite(PINO_BOMBA_A, LOW);
+  digitalWrite(PINO_BOMBA_B, LOW);
+  
+  // caixa_terreo.ino (APENAS ATUALIZAR AS LINHAS 20-21)
+  // 2. Inicializar SPIFFS
+  Serial.println("📂 Inicializando SPIFFS...");
+  inicializarSPIFFS();
+  
+  // 2.1 Verificar arquivos essenciais
+  verificarArquivosEssenciais();  // [NOVA LINHA]
+  
+  // 3. Inicializar WiFi
+  Serial.println("🌐 Conectando ao WiFi...");
+  inicializarWiFi();
+
+  // caixa_terreo.ino (ADIÇÕES NO SETUP)
+  // 4.5 Inicializar estado da caixa
+  Serial.println("📦 Inicializando estado da caixa...");
+  inicializarEstadoCaixa();  // [NOVA LINHA - após linha 29]
+  
+  // 4. Sincronizar hora (CRÍTICO - usa NTP, não millis)
+  Serial.println("⏰ Sincronizando NTP...");
+  inicializarTimeClient();
+  
+  // 5. Inicializar banco de usuários
+  Serial.println("👤 Inicializando banco de usuários...");
+  inicializarBancoUsuarios();
+    // 5.6 Inicializar controle de bombas
+  Serial.println("🔧 Inicializando controle de bombas...");
+  inicializarControleBombas();  // [NOVA LINHA]
+    // ========== FASE 5: SISTEMA ==========
+  // 5.1 Inicializar estado da caixa (PRECISA DE HORA NTP PRIMEIRO!)
+  Serial.println("📦 Inicializando estado da caixa...");
+  inicializarEstadoCaixa();                // [USADO EM: variaveis.h - linha 87]
+    // 5.2 Inicializar todos os sensores
+  Serial.println("🔍 Inicializando sensores...");
+  inicializarTodosSensores();              // [USADO EM: variaveis.h - linha 96] [NOVA LINHA]
+    // 5.3 Inicializar banco de usuários
+  Serial.println("👤 Inicializando banco de usuários...");
+  inicializarBancoUsuarios();              // [USADO EM: variaveis.h - linha 60]
+  
+  
+  // 6. Inicializar Web Server
+  Serial.println("🌐 Inicializando Web Server...");
+  inicializarWebServer();
+  
+  Serial.println("\n✅ Sistema inicializado com sucesso!");
+  Serial.print("📅 Data/hora atual: ");
+  Serial.println(getDataHoraAtual());
+  
+  if (modoAP) {
+    Serial.print("📶 Modo AP - IP: ");
+    Serial.println(WiFi.softAPIP());
+  } else {
+    Serial.print("📶 WiFi - IP: ");
+    Serial.println(WiFi.localIP());
+  }
+}
+// ===================== LOOP =====================
+void loop() {
+  // 1. Manter conexão WiFi
+  verificarConexao();
+  
+  // 2. Processar requisições HTTP
+  server.handleClient();
+  
+  // 3. Atualizar estado da caixa (SIMULAÇÃO - para teste)
+  static unsigned long ultimaLeitura = 0;
+  if (millis() - ultimaLeitura > 5000) { // A cada 5 segundos
+    // SIMULAÇÃO: nível aleatório entre 0-100%
+    estadoAtual.nivelPercentual = random(0, 101);
+    estadoAtual.nivelCm = estadoAtual.nivelPercentual * 2.0;
+    estadoAtual.ultimaAtualizacao = getDataHoraAtual();
+    ultimaLeitura = millis();
+    
+    Serial.printf("[%s] 📊 Nível: %.1f%% | Bomba A: %s | Bomba B: %s\n",
+                  getHoraAtual().c_str(),
+                  estadoAtual.nivelPercentual,
+                  estadoAtual.bombaAAtiva ? "LIGADA" : "DESLIGADA",
+                  estadoAtual.bombaBAtiva ? "LIGADA" : "DESLIGADA");
+  }
+  
+  // 4. Controle automático de bombas
+  controleAutomaticoBombas();
+  
+  // 5. Verificação de segurança das bombas
+  verificarSegurancaBombas();
+  
+  delay(10);
+}
+
+
+
+=== C:\Users\Ailton\Documents\Arduino\terreo\caixa_terreo\chaves.ino ===
+
+// chaves.ino
+// Controles manuais (botões/chaves físicas)
+#include "variaveis.h"
+
+// ===================== DEFINIÇÕES LOCAIS =====================
+#define TEMPO_DEBOUNCE 50          // ms - debounce para chaves
+#define TEMPO_LONGO_PRESSIONADO 3000  // ms - tempo para "pressionado longo"
+#define TEMPO_ANTI_REPETICAO 1000  // ms - tempo mínimo entre eventos
+
+// Estados dos botões
+#define BOTAO_SOLTO 0
+#define BOTAO_PRESSIONADO 1
+#define BOTAO_MANTIDO 2
+#define BOTAO_LIBERADO 3
+
+// ===================== VARIÁVEIS LOCAIS =====================
+bool chavesInicializadas = false;
+unsigned long ultimaLeituraChaves = 0;
+
+// Estado da chave manual
+int estadoChaveManual = BOTAO_SOLTO;
+unsigned long tempoPressionadoChave = 0;
+bool chaveManualDebounced = false;
+
+// Estado do botão de emergência
+int estadoBotaoEmergencia = BOTAO_SOLTO;
+unsigned long tempoPressionadoEmergencia = 0;
+bool botaoEmergenciaDebounced = false;
+
+// Controle de repetição
+unsigned long ultimoEventoChave = 0;
+unsigned long ultimoEventoEmergencia = 0;
+
+// ===================== INICIALIZAÇÃO =====================
+void inicializarChaves() {
+  // [USADO EM: variaveis.h - linha 112 (protótipo)]
+  // [USADO EM: sensores.ino - linha 55 (chamada)]
+  
+  Serial.println("🔘 Inicializando controles manuais...");
+  
+  // Configurar pinos como INPUT_PULLUP
+  // Chave normalmente ABERTA: quando ligada, fecha para GND → pino vai para LOW
+  pinMode(PINO_CHAVE_MANUAL, INPUT_PULLUP);      // [USADO EM: variaveis.h - linha 22]
+  pinMode(PINO_BOTAO_EMERGENCIA, INPUT_PULLUP);  // [USADO EM: variaveis.h - linha 23]
+  
+  // Ler estados iniciais
+  chaveManualDebounced = (digitalRead(PINO_CHAVE_MANUAL) == LOW);
+  botaoEmergenciaDebounced = (digitalRead(PINO_BOTAO_EMERGENCIA) == LOW);
+  
+  // Inicializar variáveis globais
+  chaveManualAtiva = chaveManualDebounced;        // [USADO EM: variaveis.cpp - linha 44]
+  botaoEmergenciaPressionado = false;             // [USADO EM: variaveis.cpp - linha 45]
+  
+  Serial.printf("✅ Chaves inicializadas\n");
+  Serial.printf("  Chave manual: %s\n", chaveManualDebounced ? "LIGADA" : "DESLIGADA");
+  Serial.printf("  Botão emergência: %s\n", botaoEmergenciaDebounced ? "PRESSIONADO" : "SOLTO");
+  
+  chavesInicializadas = true;
+}
+
+// ===================== LEITURA COM DEBOUNCE =====================
+bool lerDebounced(int pino, bool &estadoAnterior, unsigned long &ultimaMudanca) {
+  // Função interna para debounce
+  
+  bool estadoAtual = (digitalRead(pino) == LOW); // LOW = pressionado/fechado
+  unsigned long agora = millis();
+  
+  if (estadoAtual != estadoAnterior) {
+    ultimaMudanca = agora;
+  }
+  
+  // Só aceita mudança após tempo de debounce
+  if (agora - ultimaMudanca > TEMPO_DEBOUNCE) {
+    if (estadoAtual != estadoAnterior) {
+      estadoAnterior = estadoAtual;
+      return true; // Houve mudança estável
+    }
+  }
+  
+  return false; // Sem mudança estável
+}
+
+// ===================== LEITURA DA CHAVE MANUAL =====================
+bool lerChaveManual() {
+  // [USADO EM: variaveis.h - linha 113 (protótipo)]
+  // [USADO EM: sensores.ino - linha 97 (chamada)]
+  
+  if (!chavesInicializadas) {
+    return false;
+  }
+  
+  unsigned long agora = millis();
+  bool mudou = false;
+  static unsigned long ultimaMudancaChave = 0;
+  static bool estadoBrutoChave = false;
+  
+  // Ler com debounce
+  mudou = lerDebounced(PINO_CHAVE_MANUAL, estadoBrutoChave, ultimaMudancaChave);
+  
+  if (mudou) {
+    // Atualizar estado da máquina
+    if (estadoBrutoChave) {
+      estadoChaveManual = BOTAO_PRESSIONADO;
+      tempoPressionadoChave = agora;
+      Serial.println("🔘 Chave manual: LIGADA");
+    } else {
+      estadoChaveManual = BOTAO_LIBERADO;
+      unsigned long tempoPressionado = agora - tempoPressionadoChave;
+      Serial.printf("🔘 Chave manual: DESLIGADA (pressionada por %lu ms)\n", tempoPressionado);
+      
+      // Verificar se foi pressionamento longo
+      if (tempoPressionado >= TEMPO_LONGO_PRESSIONADO) {
+        Serial.println("🔘 Chave manual: PRESSIONAMENTO LONGO detectado");
+        // Ação especial para pressionamento longo
+        executarAcaoChaveLonga();
+      }
+    }
+    
+    // Atualizar variável global
+    chaveManualAtiva = estadoBrutoChave; // [USADO EM: variaveis.cpp - linha 44]
+    
+    // Registrar evento (com anti-repetição)
+    if (agora - ultimoEventoChave > TEMPO_ANTI_REPETICAO) {
+      registrarAviso("chave", 
+                    String("Chave manual ") + (estadoBrutoChave ? "LIGADA" : "DESLIGADA"),
+                    "manual");
+      ultimoEventoChave = agora;
+    }
+  }
+  
+  // Verificar se está sendo mantida pressionada
+  if (estadoBrutoChave && (agora - tempoPressionadoChave >= TEMPO_LONGO_PRESSIONADO)) {
+    if (estadoChaveManual != BOTAO_MANTIDO) {
+      estadoChaveManual = BOTAO_MANTIDO;
+      Serial.println("🔘 Chave manual: MANTIDA PRESSIONADA");
+    }
+  }
+  
+  chaveManualDebounced = estadoBrutoChave;
+  return estadoBrutoChave;
+}
+
+// ===================== LEITURA DO BOTÃO DE EMERGÊNCIA =====================
+bool lerBotaoEmergencia() {
+  // [USADO EM: variaveis.h - linha 114 (protótipo)]
+  
+  if (!chavesInicializadas) {
+    return false;
+  }
+  
+  unsigned long agora = millis();
+  bool mudou = false;
+  static unsigned long ultimaMudancaEmergencia = 0;
+  static bool estadoBrutoEmergencia = false;
+  
+  // Ler com debounce
+  mudou = lerDebounced(PINO_BOTAO_EMERGENCIA, estadoBrutoEmergencia, ultimaMudancaEmergencia);
+  
+  if (mudou) {
+    // Atualizar estado da máquina
+    if (estadoBrutoEmergencia) {
+      estadoBotaoEmergencia = BOTAO_PRESSIONADO;
+      tempoPressionadoEmergencia = agora;
+      Serial.println("🚨 Botão emergência: PRESSIONADO");
+      
+      // Ação imediata do botão de emergência
+      executarAcaoEmergencia();
+      
+    } else {
+      estadoBotaoEmergencia = BOTAO_LIBERADO;
+      unsigned long tempoPressionado = agora - tempoPressionadoEmergencia;
+      Serial.printf("🚨 Botão emergência: SOLTO (pressionado por %lu ms)\n", tempoPressionado);
+    }
+    
+    // Atualizar variável global
+    botaoEmergenciaPressionado = estadoBrutoEmergencia; // [USADO EM: variaveis.cpp - linha 45]
+    
+    // Registrar evento (sempre para emergência)
+    registrarAviso("emergencia", 
+                  String("Botão emergência ") + (estadoBrutoEmergencia ? "PRESSIONADO" : "SOLTO"),
+                  "manual");
+    ultimoEventoEmergencia = agora;
+  }
+  
+  // Verificar se está sendo mantido pressionado
+  if (estadoBrutoEmergencia && (agora - tempoPressionadoEmergencia >= TEMPO_LONGO_PRESSIONADO)) {
+    if (estadoBotaoEmergencia != BOTAO_MANTIDO) {
+      estadoBotaoEmergencia = BOTAO_MANTIDO;
+      Serial.println("🚨 Botão emergência: MANTIDO PRESSIONADO");
+      // Ação adicional para pressão longa
+      executarAcaoEmergenciaLonga();
+    }
+  }
+  
+  botaoEmergenciaDebounced = estadoBrutoEmergencia;
+  return estadoBrutoEmergencia;
+}
+
+// ===================== AÇÕES DOS CONTROLES =====================
+void executarAcaoChaveLonga() {
+  // [FUNÇÃO INTERNA - ação para pressionamento longo da chave]
+  
+  Serial.println("🔧 Executando ação de chave longa...");
+  
+  // Alternar entre bombas A e B
+  if (estadoAtual.bombaAAtiva && !estadoAtual.bombaBAtiva) {
+    // Se só A está ligada, desliga A e liga B
+    digitalWrite(PINO_BOMBA_A, LOW);
+    estadoAtual.bombaAAtiva = false;
+    ligarBombaB();
+    registrarAviso("manual", "Troca manual: Bomba A → B", "operador");
+    
+  } else if (!estadoAtual.bombaAAtiva && estadoAtual.bombaBAtiva) {
+    // Se só B está ligada, desliga B e liga A
+    digitalWrite(PINO_BOMBA_B, LOW);
+    estadoAtual.bombaBAtiva = false;
+    ligarBombaA();
+    registrarAviso("manual", "Troca manual: Bomba B → A", "operador");
+    
+  } else if (estadoAtual.bombaAAtiva && estadoAtual.bombaBAtiva) {
+    // Se ambas estão ligadas, desliga tudo
+    desligarBombas();
+    registrarAviso("manual", "Desligamento manual de ambas bombas", "operador");
+    
+  } else {
+    // Se nenhuma está ligada, liga a primária
+    ligarBombaA();
+    registrarAviso("manual", "Ligação manual da Bomba A", "operador");
+  }
+  
+  // Feedback visual
+  indicarEvento("bomba_ligada");
+}
+
+void executarAcaoEmergencia() {
+  // [FUNÇÃO INTERNAL - ação do botão de emergência]
+  
+  Serial.println("🚨 EXECUTANDO AÇÃO DE EMERGÊNCIA!");
+  
+  // 1. Ligar ambas as bombas imediatamente (máxima vazão)
+  ligarBombasAB();
+  
+  // 2. Ativar modo de emergência no sistema
+  // (poderia ter uma variável global de modo emergência)
+  
+  // 3. Feedback visual intenso
+  for (int i = 0; i < 5; i++) {
+    digitalWrite(PINO_LED_ALARME, HIGH);
+    digitalWrite(PINO_LED_STATUS, HIGH);
+    digitalWrite(PINO_LED_NORMAL, HIGH);
+    delay(100);
+    digitalWrite(PINO_LED_ALARME, LOW);
+    digitalWrite(PINO_LED_STATUS, LOW);
+    digitalWrite(PINO_LED_NORMAL, LOW);
+    delay(100);
+  }
+  
+  registrarAviso("emergencia", "AÇÃO DE EMERGÊNCIA ATIVADA", "operador");
+}
+
+void executarAcaoEmergenciaLonga() {
+  // [FUNÇÃO INTERNA - ação para pressionamento longo do botão emergência]
+  
+  Serial.println("🚨 AÇÃO DE EMERGÊNCIA LONGA - REINICIALIZAÇÃO DO SISTEMA");
+  
+  // 1. Desligar todas as bombas (segurança)
+  desligarBombas();
+  
+  // 2. Indicar reinicialização
+  for (int i = 0; i < 3; i++) {
+    digitalWrite(PINO_LED_ALARME, HIGH);
+    delay(300);
+    digitalWrite(PINO_LED_ALARME, LOW);
+    delay(300);
+  }
+  
+  registrarAviso("emergencia", "Reinicialização manual solicitada", "operador");
+  
+  // 3. Aqui poderia reiniciar o ESP32 depois de um delay
+  // ESP.restart();
+  // Mas por segurança, só avisamos
+  Serial.println("⚠️ Reinicialização manual disponível (descomente ESP.restart())");
+}
+
+// ===================== VERIFICAÇÃO DE INTERRUPÇÕES MANUAIS =====================
+void verificarInterrupcoesManuais() {
+  // [USADO EM: variaveis.h - linha 115 (protótipo)]
+  // [USADO EM: sensores.ino - linha 75 (chamada)]
+  
+  if (!chavesInicializadas) {
+    return;
+  }
+  
+  unsigned long agora = millis();
+  
+  // Verificar chaves periodicamente (não usar interrupções reais para simplicidade)
+  if (agora - ultimaLeituraChaves > 100) { // A cada 100ms
+    lerChaveManual();
+    lerBotaoEmergencia();
+    ultimaLeituraChaves = agora;
+  }
+  
+  // Executar ações baseadas no estado
+  executarAcoesBaseadasEmChaves();
+}
+
+void executarAcoesBaseadasEmChaves() {
+  // [FUNÇÃO INTERNA - lógica de controle por chaves]
+  
+  // Se chave manual está ligada, sobrepõe controle automático
+  if (chaveManualAtiva) {
+    // Modo manual ativo - bombas controladas pela chave
+    static bool ultimoEstadoChave = false;
+    
+    if (chaveManualAtiva != ultimoEstadoChave) {
+      if (chaveManualAtiva) {
+        // Chave ligou - liga bombas se necessário
+        if (!estadoAtual.bombaAAtiva && !estadoAtual.bombaBAtiva) {
+          ligarBombaA(); // Liga a primária
+        }
+      } else {
+        // Chave desligou - desliga bombas
+        desligarBombas();
+      }
+      ultimoEstadoChave = chaveManualAtiva;
+    }
+  }
+  
+  // Se botão de emergência está pressionado, força ambas bombas
+  if (botaoEmergenciaPressionado) {
+    if (!estadoAtual.bombaAAtiva || !estadoAtual.bombaBAtiva) {
+      ligarBombasAB();
+    }
+  }
+}
+
+// ===================== DIAGNÓSTICO DAS CHAVES =====================
+void diagnosticarChaves() {
+  // [FUNÇÃO INTERNA - debug]
+  
+  Serial.println("\n🔍 DIAGNÓSTICO DOS CONTROLES MANUAIS");
+  Serial.println("===================================");
+  
+  // Status básico
+  Serial.printf("Controles inicializados: %s\n", chavesInicializadas ? "SIM" : "NÃO");
+  Serial.printf("Estado chave manual: %d\n", estadoChaveManual);
+  Serial.printf("Estado botão emergência: %d\n", estadoBotaoEmergencia);
+  
+  // Leitura direta dos pinos
+  Serial.println("\nLeitura direta dos pinos:");
+  int estadoChaveBruto = digitalRead(PINO_CHAVE_MANUAL);
+  int estadoEmergenciaBruto = digitalRead(PINO_BOTAO_EMERGENCIA);
+  
+  Serial.printf("  Chave manual (GPIO %d): %s\n", 
+                PINO_CHAVE_MANUAL,
+                estadoChaveBruto == LOW ? "LOW (PRESSIONADA)" : "HIGH (SOLTA)");
+  Serial.printf("  Botão emergência (GPIO %d): %s\n",
+                PINO_BOTAO_EMERGENCIA,
+                estadoEmergenciaBruto == LOW ? "LOW (PRESSIONADO)" : "HIGH (SOLTO)");
+  
+  // Teste interativo
+  Serial.println("\n🔘 TESTE INTERATIVO DOS CONTROLES");
+  Serial.println("Pressione e solte os controles para testar");
+  Serial.println("Monitorando por 10 segundos...");
+  
+  unsigned long inicioTeste = millis();
+  int contadorChave = 0;
+  int contadorEmergencia = 0;
+  bool ultimaChave = chaveManualDebounced;
+  bool ultimaEmergencia = botaoEmergenciaDebounced;
+  
+  while (millis() - inicioTeste < 10000) {
+    bool chaveAtual = lerChaveManual();
+    bool emergenciaAtual = lerBotaoEmergencia();
+    
+    if (chaveAtual != ultimaChave) {
+      contadorChave++;
+      Serial.printf("  Chave: %s\n", chaveAtual ? "LIGADA" : "DESLIGADA");
+      ultimaChave = chaveAtual;
+    }
+    
+    if (emergenciaAtual != ultimaEmergencia) {
+      contadorEmergencia++;
+      Serial.printf("  Emergência: %s\n", emergenciaAtual ? "PRESSIONADO" : "SOLTO");
+      ultimaEmergencia = emergenciaAtual;
+    }
+    
+    delay(50);
+  }
+  
+  Serial.println("\n📊 RESULTADO DO TESTE:");
+  Serial.printf("  Mudanças na chave manual: %d\n", contadorChave);
+  Serial.printf("  Mudanças no botão emergência: %d\n", contadorEmergencia);
+  
+  if (contadorChave > 0 || contadorEmergencia > 0) {
+    Serial.println("✅ Controles respondendo corretamente");
+  } else {
+    Serial.println("⚠️ Nenhuma mudança detectada - verifique conexões");
+  }
+  
+  // Teste de pull-up
+  Serial.println("\nTeste de pull-up interno:");
+  
+  // Chave manual
+  pinMode(PINO_CHAVE_MANUAL, INPUT); // Sem pull-up
+  delay(10);
+  int chaveSemPullup = digitalRead(PINO_CHAVE_MANUAL);
+  
+  pinMode(PINO_CHAVE_MANUAL, INPUT_PULLUP); // Com pull-up
+  delay(10);
+  int chaveComPullup = digitalRead(PINO_CHAVE_MANUAL);
+  
+  Serial.printf("  Chave sem pull-up: %s\n", chaveSemPullup == HIGH ? "HIGH" : "LOW");
+  Serial.printf("  Chave com pull-up: %s\n", chaveComPullup == HIGH ? "HIGH" : "LOW");
+  
+  // Interpretação
+  Serial.println("\n💡 INTERPRETAÇÃO:");
+  if (chaveComPullup == LOW) {
+    Serial.println("  → Chave FECHADA (contato fazendo para GND)");
+  } else {
+    Serial.println("  → Chave ABERTA (resistor pull-up mantém HIGH)");
+  }
+  
+  Serial.println("===================================\n");
+}
+
+// ===================== FUNÇÕES AUXILIARES =====================
+bool isModoManualAtivo() {
+  return chaveManualAtiva;
+}
+
+bool isModoEmergenciaAtivo() {
+  return botaoEmergenciaPressionado;
+}
+
+String getEstadoChaveTexto() {
+  switch(estadoChaveManual) {
+    case BOTAO_SOLTO: return "SOLTA";
+    case BOTAO_PRESSIONADO: return "PRESSIONADA";
+    case BOTAO_MANTIDO: return "MANTIDA";
+    case BOTAO_LIBERADO: return "LIBERADA";
+    default: return "DESCONHECIDO";
+  }
+}
+
+void simularPressionamentoChave(bool pressionar) {
+  // [FUNÇÃO INTERNA - para testes sem hardware]
+  static bool simulando = false;
+  
+  if (pressionar && !simulando) {
+    Serial.println("🔘 SIMULAÇÃO: Chave manual pressionada");
+    chaveManualAtiva = true;
+    estadoChaveManual = BOTAO_PRESSIONADO;
+    tempoPressionadoChave = millis();
+    simulando = true;
+    
+  } else if (!pressionar && simulando) {
+    Serial.println("🔘 SIMULAÇÃO: Chave manual liberada");
+    chaveManualAtiva = false;
+    estadoChaveManual = BOTAO_LIBERADO;
+    simulando = false;
+  }
+}
+
+
+
+=== C:\Users\Ailton\Documents\Arduino\terreo\caixa_terreo\conexao.ino ===
+
+// conexao.ino
+#include "variaveis.h"
+
+// ===================== WI-FI =====================
+void inicializarWiFi() {
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(SSID, PASSWORD);
+
+  Serial.print("Conectando ao WiFi");
+
+  unsigned long inicio = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - inicio < 15000) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  if (WiFi.status() == WL_CONNECTED) {
+    hasInternet = true;
+    modoAP = false;
+    Serial.println("\n✅ WiFi conectado!");
+    Serial.print("📶 IP: ");
+    Serial.println(WiFi.localIP());
+  } else {
+    iniciarModoAP();
+  }
+}
+
+void iniciarModoAP() {
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP(AP_SSID, AP_PASSWORD);
+
+  modoAP = true;
+  hasInternet = false;
+
+  Serial.println("\n📡 Modo AP ativado");
+  Serial.print("📶 IP AP: ");
+  Serial.println(WiFi.softAPIP());
+}
+
+void verificarConexao() {
+  if (!modoAP && WiFi.status() != WL_CONNECTED) {
+    Serial.println("⚠️ WiFi desconectado, tentando reconectar...");
+    inicializarWiFi();
+  }
+}
+
+// ===================== NTP (TEMPO REAL) =====================
+void inicializarTimeClient() {
+  timeClient.begin();
+  
+  if (!timeClient.forceUpdate()) {
+    Serial.println("⚠️ Falha na sincronização NTP inicial");
+  } else {
+    Serial.print("✅ Hora sincronizada: ");
+    Serial.println(timeClient.getFormattedTime());
+  }
+}
+
+String getDataHoraAtual() {
+  if (hasInternet) {
+    timeClient.update();
+    return timeClient.getFormattedTime();
+  }
+  return "00:00:00";
+}
+
+String getDataAtual() {
+  if (hasInternet) {
+    timeClient.update();
+    String tempo = timeClient.getFormattedTime();
+    return tempo.substring(0, 8);
+  }
+  return "00:00:00";
+}
+
+String getHoraAtual() {
+  if (hasInternet) {
+    timeClient.update();
+    return timeClient.getFormattedTime();
+  }
+  return "00:00:00";
+}
+
+
+
+=== C:\Users\Ailton\Documents\Arduino\terreo\caixa_terreo\estado_caixa.ino ===
+
+// estado_caixa.ino
+#include "variaveis.h"
+
+// ===================== DEFINIÇÕES =====================
+#define ALTURA_MAXIMA_CAIXA 200.0  // cm (exemplo: 2 metros)
+#define NIVEL_CRITICO 20.0         // 20%
+#define NIVEL_ALERTA 40.0          // 40%
+#define NIVEL_NORMAL 60.0          // 60%
+
+// ===================== VARIÁVEIS DE ESTADO =====================
+// (Já declaradas em variaveis.cpp: estadoAtual, estadoAnterior)
+
+// ===================== INICIALIZAÇÃO =====================
+void inicializarEstadoCaixa() {
+  // [NOVA FUNÇÃO - chamar no setup principal]
+  
+  Serial.println("📦 Inicializando estado da caixa...");
+  
+  // Estado inicial
+  estadoAtual.nivelPercentual = 100.0;
+  estadoAtual.nivelCm = ALTURA_MAXIMA_CAIXA;
+  estadoAtual.vazaoEntrada = false;
+  estadoAtual.bombaAAtiva = false;
+  estadoAtual.bombaBAtiva = false;
+  estadoAtual.ultimaAtualizacao = getDataHoraAtual();
+  
+  Serial.printf("✅ Estado inicial: %.1f%% (%.1f cm)\n", 
+                estadoAtual.nivelPercentual, 
+                estadoAtual.nivelCm);
+}
+
+// ===================== ATUALIZAR ESTADO =====================
+void atualizarEstadoCaixa(float nivelCm, bool vazaoEntrada) {
+  // [NOVA FUNÇÃO - será chamada por sensores]
+  
+  // Calcular percentual
+  float nivelPercentual = (nivelCm / ALTURA_MAXIMA_CAIXA) * 100.0;
+  
+  // Limitar entre 0-100%
+  if (nivelPercentual < 0.0) nivelPercentual = 0.0;
+  if (nivelPercentual > 100.0) nivelPercentual = 100.0;
+  
+  // Atualizar estado
+  estadoAtual.nivelPercentual = nivelPercentual;
+  estadoAtual.nivelCm = nivelCm;
+  estadoAtual.vazaoEntrada = vazaoEntrada;
+  estadoAtual.ultimaAtualizacao = getDataHoraAtual();
+  
+  // Verificar mudanças críticas
+  verificarMudancasCriticas();
+  
+  // Log
+  Serial.printf("📊 Estado atualizado: %.1f%% (%.1f cm) | Vazão: %s\n",
+                nivelPercentual,
+                nivelCm,
+                vazaoEntrada ? "SIM" : "NÃO");
+}
+
+// ===================== VERIFICAÇÃO DE MUDANÇAS CRÍTICAS =====================
+void verificarMudancasCriticas() {
+  static float ultimoNivelCritico = 0.0;
+  static unsigned long ultimoAlertaCritico = 0;
+  
+  unsigned long agora = millis();
+  
+  // NÍVEL CRÍTICO (< 20%)
+  if (estadoAtual.nivelPercentual < NIVEL_CRITICO) {
+    if (agora - ultimoAlertaCritico > 300000) { // A cada 5 minutos
+      registrarAvisoNivelCritico(estadoAtual.nivelPercentual);
+      ultimoNivelCritico = estadoAtual.nivelPercentual;
+      ultimoAlertaCritico = agora;
+      
+      Serial.println("🚨 NÍVEL CRÍTICO DETECTADO!");
+    }
+  }
+  
+  // NÍVEL NORMALIZADO (> 60% após estar crítico)
+  if (estadoAtual.nivelPercentual > NIVEL_NORMAL && ultimoNivelCritico > 0) {
+    registrarAvisoNivelNormal(estadoAtual.nivelPercentual);
+    ultimoNivelCritico = 0.0;
+    
+    Serial.println("✅ Nível normalizado após situação crítica");
+  }
+}
+
+// ===================== OBTER STATUS TEXTO =====================
+String getStatusCaixa() {
+  if (estadoAtual.nivelPercentual < NIVEL_CRITICO) {
+    return "CRÍTICO";
+  } else if (estadoAtual.nivelPercentual < NIVEL_ALERTA) {
+    return "ALERTA";
+  } else if (estadoAtual.nivelPercentual < NIVEL_NORMAL) {
+    return "ATENÇÃO";
+  } else {
+    return "NORMAL";
+  }
+}
+
+// ===================== OBTER COR DO STATUS =====================
+String getCorStatus() {
+  if (estadoAtual.nivelPercentual < NIVEL_CRITICO) {
+    return "vermelho";
+  } else if (estadoAtual.nivelPercentual < NIVEL_ALERTA) {
+    return "laranja";
+  } else if (estadoAtual.nivelPercentual < NIVEL_NORMAL) {
+    return "amarelo";
+  } else {
+    return "verde";
+  }
+}
+
+// ===================== ESTIMATIVA DE TEMPO =====================
+int estimarTempoEsgotamento() {
+  // Estimativa simples em minutos
+  // Considerando consumo médio constante
+  
+  if (estadoAtual.vazaoEntrada || estadoAtual.nivelPercentual >= 100.0) {
+    return -1; // Não vai esgotar (está enchendo ou cheia)
+  }
+  
+  if (estadoAtual.nivelPercentual <= 0.0) {
+    return 0; // Já esgotou
+  }
+  
+  // Estimativa: 1% = 2 minutos sem reposição
+  int minutos = (int)(estadoAtual.nivelPercentual * 2.0);
+  
+  return minutos;
+}
+
+// ===================== RELATÓRIO DE ESTADO =====================
+void imprimirRelatorioEstado() {
+  Serial.println("\n📋 RELATÓRIO DO ESTADO DA CAIXA");
+  Serial.println("=================================");
+  Serial.printf("Nível: %.1f%% (%.1f cm)\n", 
+                estadoAtual.nivelPercentual, 
+                estadoAtual.nivelCm);
+  Serial.printf("Status: %s\n", getStatusCaixa().c_str());
+  Serial.printf("Vazão de entrada: %s\n", 
+                estadoAtual.vazaoEntrada ? "ATIVA" : "INATIVA");
+  Serial.printf("Bomba A: %s\n", 
+                estadoAtual.bombaAAtiva ? "LIGADA" : "DESLIGADA");
+  Serial.printf("Bomba B: %s\n", 
+                estadoAtual.bombaBAtiva ? "LIGADA" : "DESLIGADA");
+  Serial.printf("Última atualização: %s\n", 
+                estadoAtual.ultimaAtualizacao.c_str());
+  
+  int tempoEsgotamento = estimarTempoEsgotamento();
+  if (tempoEsgotamento > 0) {
+    Serial.printf("⏰ Estimativa de esgotamento: %d minutos\n", tempoEsgotamento);
+  } else if (tempoEsgotamento == 0) {
+    Serial.println("⏰ CAIXA VAZIA!");
+  } else {
+    Serial.println("⏰ Não há risco de esgotamento iminente");
+  }
+  Serial.println("=================================\n");
+}
+
+
+
+=== C:\Users\Ailton\Documents\Arduino\terreo\caixa_terreo\sensores.ino ===
+
+// sensores.ino
+// APENAS DECLARAÇÕES de sensores - implementações vão em arquivos específicos
+
+#include "variaveis.h"
+
+/*
+  ESTE ARQUIVO CONTÉM APENAS DECLARAÇÕES DE FUNÇÕES DE SENSORES
+  
+  As implementações ficarão em:
+  - ultrassom.ino    -> leitura do sensor de nível (HC-SR04)
+  - vazao.ino        -> leitura do sensor de vazão (YF-S201)
+  - leds.ino         -> controle dos LEDs indicadores
+  - chaves.ino       -> leitura de chaves/buttons manuais
+  
+  As variáveis (pinos, estados) estão em variaveis.h/cpp
+*/
+
+// ===================== SENSOR ULTRASSÔNICO (NÍVEL) =====================
+void inicializarSensorUltrassom();                     // [IMPLEMENTAÇÃO EM: ultrassom.ino]
+float lerNivelUltrassom();                             // [IMPLEMENTAÇÃO EM: ultrassom.ino]
+bool verificarSensorUltrassomOk();                     // [IMPLEMENTAÇÃO EM: ultrassom.ino]
+
+// ===================== SENSOR DE VAZÃO =====================
+void inicializarSensorVazao();                         // [IMPLEMENTAÇÃO EM: vazao.ino]
+float lerVazaoInstantanea();                           // [IMPLEMENTAÇÃO EM: vazao.ino]
+float calcularVazaoTotalDiaria();                      // [IMPLEMENTAÇÃO EM: vazao.ino]
+void resetContadorVazaoDiario();                       // [IMPLEMENTAÇÃO EM: vazao.ino]
+
+// ===================== LEDS INDICADORES =====================
+void inicializarLeds();                                // [IMPLEMENTAÇÃO EM: leds.ino]
+void atualizarLedsStatus();                            // [IMPLEMENTAÇÃO EM: leds.ino]
+void piscarLedAlarme(int vezes, int intervalo);        // [IMPLEMENTAÇÃO EM: leds.ino]
+void setLedStatus(bool estado);                        // [IMPLEMENTAÇÃO EM: leds.ino]
+
+// ===================== CHAVES/BUTTONS =====================
+void inicializarChaves();                              // [IMPLEMENTAÇÃO EM: chaves.ino]
+bool lerChaveManual();                                 // [IMPLEMENTAÇÃO EM: chaves.ino]
+bool lerBotaoEmergencia();                             // [IMPLEMENTAÇÃO EM: chaves.ino]
+void verificarInterrupcoesManuais();                   // [IMPLEMENTAÇÃO EM: chaves.ino]
+
+// ===================== SISTEMA DE SENSORES =====================
+void inicializarTodosSensores();                       // [IMPLEMENTAÇÃO AQUI MESMO]
+void lerTodosSensores();                               // [IMPLEMENTAÇÃO AQUI MESMO]
+void diagnosticarSensores();                           // [IMPLEMENTAÇÃO AQUI MESMO]
+
+// ===================== IMPLEMENTAÇÕES (SISTEMA GERAL) =====================
+
+void inicializarTodosSensores() {
+  // [USADA EM: caixa_terreo.ino (será adicionada no setup)]
+  
+  Serial.println("🔍 Inicializando todos os sensores...");
+  
+  // Inicializar cada subsistema
+  inicializarSensorUltrassom();
+  inicializarSensorVazao();
+  inicializarLeds();
+  inicializarChaves();
+  
+  // Teste rápido dos sensores
+  diagnosticarSensores();
+  
+  Serial.println("✅ Todos os sensores inicializados");
+}
+// sensores.ino (ATUALIZAR FUNÇÃO lerTodosSensores - última versão)
+void lerTodosSensores() {
+  
+  static unsigned long ultimaLeitura = 0;
+  unsigned long agora = millis();
+  
+  // Ler sensores a cada 2 segundos
+  if (agora - ultimaLeitura > 2000) {
+    // 1. Ler nível do ultrassom
+    float nivelCm = lerNivelUltrassom();
+    
+    // Se leitura falhou, usar último valor válido ou default
+    if (nivelCm < 0) {
+      nivelCm = ultimaLeituraUltrassom > 0 ? ultimaLeituraUltrassom : 100.0;
+      Serial.println("⚠️ Usando valor anterior do ultrassom");
+    }
+    
+    // 2. Ler sensor de vazão
+    bool temVazaoEntrada = lerVazaoInstantanea();
+    
+    // 3. Verificar falta prolongada de água
+    verificarFaltaProlongada();
+    
+    // 4. Atualizar estado global da caixa
+    atualizarEstadoCaixa(nivelCm, temVazaoEntrada);
+    
+    // 5. Atualizar LEDs
+    atualizarLedsStatus();
+    
+    // 6. VERIFICAR CONTROLES MANUAIS (AGORA ATIVADO!)
+    verificarInterrupcoesManuais();
+    
+    // 7. Log periódico
+    static unsigned long ultimoLog = 0;
+    if (agora - ultimoLog > 15000) {
+      String statusVazao = temVazaoEntrada ? "ÁGUA DA RUA ✔️" : "SEM ÁGUA DA RUA ✖️";
+      String statusChave = chaveManualAtiva ? "MANUAL ⚙️" : "AUTO 🤖";
+      Serial.printf("[%s] 📏 Nível: %.1f cm | 💧 %s | 🔘 %s\n",
+                    getHoraAtual().c_str(),
+                    nivelCm,
+                    statusVazao.c_str(),
+                    statusChave.c_str());
+      ultimoLog = agora;
+    }
+    
+    ultimaLeitura = agora;
+  }
+}
+
+void diagnosticarSensores() {
+  // [FUNÇÃO INTERNA - debug]
+  
+  Serial.println("📋 DIAGNÓSTICO DE SENSORES:");
+  
+  // Ultrassom
+  bool ultrassomOk = verificarSensorUltrassomOk();
+  Serial.printf("  Ultrassom: %s\n", ultrassomOk ? "✅ OK" : "❌ FALHA");
+  
+  if (ultrassomOk) {
+    float nivelTeste = lerNivelUltrassom();
+    Serial.printf("    Leitura teste: %.1f cm\n", nivelTeste);
+  }
+  
+  // Vazão
+  float vazaoTeste = lerVazaoInstantanea();
+  Serial.printf("  Sensor vazão: %.2f L/min\n", vazaoTeste);
+  
+  // LEDs (teste visual)
+  Serial.println("  LEDs: Teste visual (piscando 2x)...");
+  piscarLedAlarme(2, 200);
+  
+  // Chaves
+  bool chaveManual = lerChaveManual();
+  Serial.printf("  Chave manual: %s\n", chaveManual ? "LIGADA" : "DESLIGADA");
+  
+  Serial.println("📋 Fim do diagnóstico");
+}
+
+
+
+=== C:\Users\Ailton\Documents\Arduino\terreo\caixa_terreo\spiffs.ino ===
+
+// spiffs.ino
+#include "variaveis.h"
+
+// ===================== SPIFFS =====================
+void inicializarSPIFFS() {
+  // [USADO EM: variaveis.h - linha 57 (protótipo)]
+  // [USADO EM: caixa_terreo.ino - linha 20 (chamada)]
+  
+  Serial.print("📂 Inicializando SPIFFS... ");
+  
+  if (!SPIFFS.begin(true)) {
+    Serial.println("❌ Falha ao montar SPIFFS!");
+    return;
+  }
+  
+  Serial.println("✅ OK");
+  
+  // Criar diretório /dados se não existir
+  criarDiretorioSeNaoExistir(DIR_DADOS);  // [USADO EM: variaveis.h - linha 5 (DIR_DADOS)]
+  
+  // Listar arquivos para debug
+  listarSPIFFSDebug();
+}
+
+bool criarDiretorioSeNaoExistir(String caminho) {
+  // [USADO EM: variaveis.h - linha 58 (protótipo)]
+  // [USADO EM: spiffs.ino - linha 20 (chamada)]
+  
+  if (!SPIFFS.exists(caminho)) {
+    if (SPIFFS.mkdir(caminho)) {
+      Serial.printf("📁 Diretório criado: %s\n", caminho.c_str());
+      return true;
+    } else {
+      Serial.printf("❌ Falha ao criar diretório: %s\n", caminho.c_str());
+      return false;
+    }
+  }
+  return true;
+}
+
+// ===================== LISTAGEM DEBUG =====================
+void listarSPIFFSDebug() {
+  // [NÃO DECLARADA NO HEADER - função interna]
+  
+  Serial.println("📋 Conteúdo do SPIFFS:");
+  
+  File root = SPIFFS.open("/");
+  File file = root.openNextFile();
+  int count = 0;
+  
+  while (file) {
+    count++;
+    Serial.printf("  %-30s %8d bytes\n", 
+                  file.name(), 
+                  file.size());
+    file = root.openNextFile();
+  }
+  
+  if (count == 0) {
+    Serial.println("  (vazio)");
+  }
+  
+  root.close();
+}
+
+// ===================== UTILITÁRIOS =====================
+String getContentType(String filename) {
+  // [USADO EM: variaveis.h - linha 59 (protótipo)]
+  // [USADO EM: webserver.ino (próximo) - servir arquivos estáticos]
+  
+  if (filename.endsWith(".html")) return "text/html; charset=utf-8";
+  if (filename.endsWith(".css"))  return "text/css; charset=utf-8";
+  if (filename.endsWith(".js"))   return "application/javascript; charset=utf-8";
+  if (filename.endsWith(".png"))  return "image/png";
+  if (filename.endsWith(".jpg"))  return "image/jpeg";
+  if (filename.endsWith(".jpeg")) return "image/jpeg";
+  if (filename.endsWith(".gif"))  return "image/gif";
+  if (filename.endsWith(".ico"))  return "image/x-icon";
+  if (filename.endsWith(".json")) return "application/json; charset=utf-8";
+  if (filename.endsWith(".txt"))  return "text/plain; charset=utf-8";
+  if (filename.endsWith(".dat"))  return "text/plain; charset=utf-8";
+  
+  return "text/plain; charset=utf-8";
+}
+
+// ===================== VERIFICAÇÃO DE ARQUIVOS ESSENCIAIS =====================
+bool verificarArquivosEssenciais() {
+  // [NÃO DECLARADA NO HEADER - função interna]
+  
+  const char* arquivos[] = {
+    ARQ_USUARIOS,  // [USADO EM: variaveis.h - linha 6 (ARQ_USUARIOS)]
+    ARQ_AVISOS,    // [USADO EM: variaveis.h - linha 7 (ARQ_AVISOS)]
+    ARQ_REGISTROS, // [USADO EM: variaveis.h - linha 8 (ARQ_REGISTROS)]
+    ARQ_HISTORICO  // [USADO EM: variaveis.h - linha 9 (ARQ_HISTORICO)]
+  };
+  
+  bool todosExistem = true;
+  
+  for (const char* arq : arquivos) {
+    if (!SPIFFS.exists(arq)) {
+      Serial.printf("⚠️ Arquivo não encontrado: %s\n", arq);
+      
+      // Se for usuarios.dat, cria com dados padrão
+      if (String(arq) == ARQ_USUARIOS) {
+        Serial.println("📄 Criando usuarios.dat com dados padrão...");
+        criarUsuariosPadrao();
+      } else {
+        // Cria arquivos vazios para os outros
+        File f = SPIFFS.open(arq, FILE_WRITE);
+        if (f) {
+          f.close();
+          Serial.printf("📄 Criado arquivo vazio: %s\n", arq);
+        }
+      }
+      todosExistem = false;
+    }
+  }
+  
+  if (todosExistem) {
+    Serial.println("✅ Todos os arquivos essenciais encontrados");
+  }
+  
+  return todosExistem;
+}
+
+void criarUsuariosPadrao() {
+  // [NÃO DECLARADA NO HEADER - função interna]
+  
+  File file = SPIFFS.open(ARQ_USUARIOS, FILE_WRITE);
+  if (!file) {
+    Serial.println("❌ Falha ao criar usuarios.dat");
+    return;
+  }
+  
+  // Usuários padrão (mesmos de variaveis.cpp)
+  file.println("adm;aquarios2025!;admin");
+  file.println("sindico;aquarios23!;sindico");
+  file.println("subsindico;aquarios2020@;subsindico");
+  file.println("zelador;aquarios9999#;zelador");
+  file.println("morador;morador2025#;morador");
+  
+  file.close();
+  Serial.println("✅ usuarios.dat criado com 5 usuários padrão");
+}
+
+// ===================== LEITURA/ESCRITA GENÉRICA =====================
+String lerArquivo(String caminho) {
+  // [NÃO DECLARADA NO HEADER - função utilitária]
+  
+  if (!SPIFFS.exists(caminho)) {
+    return "";
+  }
+  
+  File file = SPIFFS.open(caminho, FILE_READ);
+  if (!file) {
+    return "";
+  }
+  
+  String conteudo = file.readString();
+  file.close();
+  
+  return conteudo;
+}
+
+bool escreverArquivo(String caminho, String conteudo, bool append = false) {
+  // [NÃO DECLARADA NO HEADER - função utilitária]
+  
+  File file = SPIFFS.open(caminho, append ? FILE_APPEND : FILE_WRITE);
+  if (!file) {
+    return false;
+  }
+  
+  size_t bytes = file.print(conteudo);
+  file.close();
+  
+  return (bytes > 0);
+}
+
+// ===================== ESPAÇO DISPONÍVEL =====================
+void mostrarEspacoSPIFFS() {
+  // [NÃO DECLARADA NO HEADER - função debug]
+  
+  size_t total = SPIFFS.totalBytes();
+  size_t usado = SPIFFS.usedBytes();
+  size_t livre = total - usado;
+  
+  Serial.printf("💾 SPIFFS: %d KB total | %d KB usado | %d KB livre (%.1f%%)\n",
+                total / 1024,
+                usado / 1024,
+                livre / 1024,
+                (usado * 100.0) / total);
+}
+// ===================== VERIFICAR SE EXISTE ARQUIVO ESPECÍFICO =====================
+bool arquivoExiste(String caminho) {
+  // [NOVA FUNÇÃO UTILITÁRIA]
+  return SPIFFS.exists(caminho);
+}
+
+
+
+=== C:\Users\Ailton\Documents\Arduino\terreo\caixa_terreo\ultrassom.ino ===
+
+// ultrassom.ino
+// Sensor de nível HC-SR04
+#include "variaveis.h"
+
+// ===================== DEFINIÇÕES LOCAIS =====================
+#define VELOCIDADE_SOM 0.0343  // cm/µs (343 m/s ÷ 10000)
+#define TEMPO_TIMEOUT 30000    // µs (30ms timeout)
+#define NUM_MEDIAS 5           // Número de leituras para média
+#define FILTRO_MINIMO 2.0      // cm - ignora leituras abaixo
+#define FILTRO_MAXIMO 400.0    // cm - ignora leituras acima
+
+// ===================== VARIÁVEIS LOCAIS =====================
+unsigned long ultimaLeituraValida = 0;
+float historicoLeituras[NUM_MEDIAS];
+int indiceHistorico = 0;
+bool sensorUltrassomInicializado = false; // ✅ NOVO NOME
+
+// ===================== FUNÇÃO DE INTERRUPÇÃO =====================
+// (Não usamos interrupção no HC-SR04, mas mantemos estrutura)
+
+// ===================== INICIALIZAÇÃO =====================
+void inicializarSensorUltrassom() {
+  // [USADO EM: variaveis.h - linha 99 (protótipo)]
+  // [USADO EM: sensores.ino - linha 52 (chamada)]
+  
+  Serial.println("📏 Inicializando sensor ultrassônico...");
+  
+  // Configurar pinos
+  pinMode(PINO_TRIG_ULTRASSOM, OUTPUT);   // [USADO EM: variaveis.h - linha 17]
+  pinMode(PINO_ECHO_ULTRASSOM, INPUT);    // [USADO EM: variaveis.h - linha 18]
+  
+  // Inicializar histórico
+  for (int i = 0; i < NUM_MEDIAS; i++) {
+    historicoLeituras[i] = 0.0;
+  }
+  
+  // Teste inicial
+  digitalWrite(PINO_TRIG_ULTRASSOM, LOW);
+  delayMicroseconds(2);
+  
+  sensorUltrassomInicializado = true;
+  Serial.println("✅ Sensor ultrassônico inicializado");
+}
+
+// ===================== LEITURA INDIVIDUAL =====================
+float lerDistanciaIndividual() {
+  // Função interna - faz uma leitura única
+  
+  // Garantir que o pino TRIG está baixo
+  digitalWrite(PINO_TRIG_ULTRASSOM, LOW);
+  delayMicroseconds(2);
+  
+  // Gerar pulso de 10µs no TRIG
+  digitalWrite(PINO_TRIG_ULTRASSOM, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(PINO_TRIG_ULTRASSOM, LOW);
+  
+  // Medir tempo do ECHO
+  unsigned long duracao = pulseIn(PINO_ECHO_ULTRASSOM, HIGH, TEMPO_TIMEOUT);
+  
+  // Calcular distância (ida e volta → dividir por 2)
+  float distancia = (duracao * VELOCIDADE_SOM) / 2.0;
+  
+  // Verificar se a leitura é válida
+  if (duracao == 0 || distancia < FILTRO_MINIMO || distancia > FILTRO_MAXIMO) {
+    return -1.0; // Leitura inválida
+  }
+  
+  return distancia;
+}
+
+// ===================== LEITURA COM FILTRO =====================
+float lerNivelUltrassom() {
+  // [USADO EM: variaveis.h - linha 100 (protótipo)]
+  // [USADO EM: sensores.ino - linha 70 (chamada)]
+  
+  if (!sensorUltrassomInicializado) {
+    Serial.println("⚠️ Sensor ultrassônico não inicializado!");
+    return -1.0;
+  }
+  
+  float leiturasValidas[NUM_MEDIAS];
+  int numValidas = 0;
+  
+  // Fazer várias leituras
+  for (int i = 0; i < NUM_MEDIAS + 2; i++) { // +2 para descartar as primeiras
+    float distancia = lerDistanciaIndividual();
+    
+    if (distancia > 0) {
+      if (i >= 2) { // Descartar as 2 primeiras
+        leiturasValidas[numValidas] = distancia;
+        numValidas++;
+      }
+    }
+    
+    if (numValidas >= NUM_MEDIAS) break;
+    delay(50); // Pequena pausa entre leituras
+  }
+  
+  // Verificar se temos leituras suficientes
+  if (numValidas < 3) {
+    Serial.println("⚠️ Poucas leituras válidas do ultrassom");
+    return -1.0;
+  }
+  
+  // Calcular média
+  float soma = 0.0;
+  for (int i = 0; i < numValidas; i++) {
+    soma += leiturasValidas[i];
+  }
+  float media = soma / numValidas;
+  
+  // Adicionar ao histórico (para tendência)
+  historicoLeituras[indiceHistorico] = media;
+  indiceHistorico = (indiceHistorico + 1) % NUM_MEDIAS;
+  
+  // Atualizar variável global
+  ultimaLeituraUltrassom = media;  // [USADO EM: variaveis.cpp - linha 38]
+  
+  // Calcular altura da água (se conhecermos a altura total da caixa)
+  // Supondo: sensor no topo, medindo distância até a água
+  // Nível = AlturaTotal - DistanciaMedida
+  float nivelCm = ALTURA_MAXIMA_CAIXA - media;  // [USADO EM: variaveis.h - linha 10]
+  
+  // Limitar entre 0 e ALTURA_MAXIMA_CAIXA
+  if (nivelCm < 0) nivelCm = 0;
+  if (nivelCm > ALTURA_MAXIMA_CAIXA) nivelCm = ALTURA_MAXIMA_CAIXA;
+  
+  ultimaLeituraValida = millis();
+  
+  // Debug ocasional
+  static unsigned long ultimoDebug = 0;
+  if (millis() - ultimoDebug > 30000) {
+    Serial.printf("📏 Ultrassom: %.1f cm (água: %.1f cm)\n", media, nivelCm);
+    ultimoDebug = millis();
+  }
+  
+  return nivelCm;
+}
+
+// ===================== VERIFICAÇÃO DO SENSOR =====================
+bool verificarSensorUltrassomOk() {
+  // [USADO EM: variaveis.h - linha 101 (protótipo)]
+  // [USADO EM: sensores.ino - linha 88 (chamada)]
+  
+  if (!sensorUltrassomInicializado) {
+    return false;
+  }
+  
+  // Verificar última leitura válida
+  if (millis() - ultimaLeituraValida > 60000) { // 1 minuto sem leitura válida
+    Serial.println("⚠️ Ultrassom: Muito tempo sem leitura válida");
+    return false;
+  }
+  
+  // Fazer uma leitura de teste
+  float teste = lerDistanciaIndividual();
+  
+  if (teste < 0) {
+    Serial.println("❌ Ultrassom: Leitura de teste falhou");
+    return false;
+  }
+  
+  return true;
+}
+
+// ===================== CALIBRAÇÃO =====================
+void calibrarSensorUltrassom(float distanciaConhecida) {
+  // [FUNÇÃO INTERNA - calibração manual]
+  
+  if (distanciaConhecida < FILTRO_MINIMO || distanciaConhecida > FILTRO_MAXIMO) {
+    Serial.println("❌ Distância de calibração inválida");
+    return;
+  }
+  
+  Serial.println("🎯 Iniciando calibração do ultrassom...");
+  Serial.printf("Posicione um objeto a %.1f cm do sensor\n", distanciaConhecida);
+  Serial.println("A calibração começará em 5 segundos...");
+  delay(5000);
+  
+  float soma = 0.0;
+  int leituras = 0;
+  
+  for (int i = 0; i < 10; i++) {
+    float distancia = lerDistanciaIndividual();
+    if (distancia > 0) {
+      soma += distancia;
+      leituras++;
+      Serial.printf("Leitura %d: %.1f cm\n", i + 1, distancia);
+    }
+    delay(200);
+  }
+  
+  if (leituras > 5) {
+    float media = soma / leituras;
+    float fatorCorrecao = distanciaConhecida / media;
+    
+    Serial.println("\n📊 RESULTADO DA CALIBRAÇÃO:");
+    Serial.printf("Distância real: %.1f cm\n", distanciaConhecida);
+    Serial.printf("Distância medida: %.1f cm\n", media);
+    Serial.printf("Fator de correção: %.4f\n", fatorCorrecao);
+    Serial.println("(Anote este valor para ajuste no código)");
+  } else {
+    Serial.println("❌ Calibração falhou - poucas leituras válidas");
+  }
+}
+
+// ===================== DIAGNÓSTICO DETALHADO =====================
+void diagnosticarUltrassom() {
+  // [FUNÇÃO INTERNA - debug avançado]
+  
+  Serial.println("\n🔍 DIAGNÓSTICO DETALHADO DO ULTRASSOM");
+  Serial.println("======================================");
+  
+  // Status básico
+  Serial.printf("Sensor inicializado: %s\n", sensorUltrassomInicializado ? "SIM" : "NÃO");
+  Serial.printf("Última leitura válida: %lu ms atrás\n", 
+                millis() - ultimaLeituraValida);
+  Serial.printf("Histórico: ");
+  for (int i = 0; i < NUM_MEDIAS; i++) {
+    Serial.printf("%.1f ", historicoLeituras[i]);
+  }
+  Serial.println();
+  
+  // Teste de leitura
+  Serial.println("\nTeste de leitura rápida:");
+  for (int i = 0; i < 3; i++) {
+    float d = lerDistanciaIndividual();
+    Serial.printf("  Leitura %d: ", i + 1);
+    if (d > 0) {
+      Serial.printf("%.1f cm\n", d);
+    } else {
+      Serial.println("FALHA");
+    }
+    delay(100);
+  }
+  
+  // Teste de pino ECHO
+  Serial.println("\nTeste de pino ECHO:");
+  pinMode(PINO_ECHO_ULTRASSOM, INPUT_PULLUP);
+  int estado = digitalRead(PINO_ECHO_ULTRASSOM);
+  Serial.printf("  Estado (com pullup): %s\n", estado == HIGH ? "HIGH" : "LOW");
+  pinMode(PINO_ECHO_ULTRASSOM, INPUT); // Voltar ao normal
+  
+  Serial.println("======================================\n");
+}
+
+// ===================== FUNÇÕES AUXILIARES =====================
+float getUltimaLeituraValida() {
+  return ultimaLeituraUltrassom;
+}
+
+bool isSensorConectado() {
+  return (sensorUltrassomInicializado && (millis() - ultimaLeituraValida < 120000)); // 2 minutos
+}
+
+void resetSensorUltrassom() {
+  Serial.println("🔄 Resetando sensor ultrassônico...");
+  sensorUltrassomInicializado = false;
+  ultimaLeituraValida = 0;
+  inicializarSensorUltrassom();
+}
+
+
+
+=== C:\Users\Ailton\Documents\Arduino\terreo\caixa_terreo\usuarios.ino ===
+
+// usuarios.ino
+#include "variaveis.h"
+
+// ===================== INICIALIZAÇÃO DO BANCO =====================
+void inicializarBancoUsuarios() {
+  // [USADO EM: variaveis.h - linha 60 (protótipo)]
+  // [USADO EM: caixa_terreo.ino - linha 35 (chamada)]
+  
+  Serial.print("👤 Inicializando banco de usuários... ");
+  
+  // Já verificamos e criamos o arquivo no spiffs.ino
+  if (!SPIFFS.exists(ARQ_USUARIOS)) {  // [USADO EM: variaveis.h - linha 6]
+    Serial.println("❌ Arquivo não existe!");
+    return;
+  }
+  
+  // Contar usuários para debug
+  File file = SPIFFS.open(ARQ_USUARIOS, FILE_READ);
+  if (!file) {
+    Serial.println("❌ Falha ao abrir arquivo");
+    return;
+  }
+  
+  int count = 0;
+  while (file.available()) {
+    String linha = file.readStringUntil('\n');
+    linha.trim();
+    if (linha.length() > 0 && linha.indexOf(';') > 0) {
+      count++;
+    }
+  }
+  file.close();
+  
+  Serial.printf("✅ OK (%d usuários)\n", count);
+}
+
+// ===================== AUTENTICAÇÃO =====================
+bool autenticarUsuario(String usuario, String senha) {
+  // [USADO EM: variaveis.h - linha 61 (protótipo)]
+  // [USADO EM: usuarios.ino - linha 118 (chamada interna)]
+  
+  if (usuario.isEmpty() || senha.isEmpty()) {
+    return false;
+  }
+  
+  File file = SPIFFS.open(ARQ_USUARIOS, FILE_READ);
+  if (!file) {
+    Serial.println("❌ Falha ao abrir usuarios.dat");
+    return false;
+  }
+  
+  while (file.available()) {
+    String linha = file.readStringUntil('\n');
+    linha.trim();
+    
+    if (linha.isEmpty()) continue;
+    
+    // Formato: usuario;senha;nivel
+    int p1 = linha.indexOf(';');
+    int p2 = linha.indexOf(';', p1 + 1);
+    
+    if (p1 == -1 || p2 == -1) continue;
+    
+    String u = linha.substring(0, p1);
+    String s = linha.substring(p1 + 1, p2);
+    String n = linha.substring(p2 + 1);
+    
+    if (u == usuario && s == senha) {
+      // Login bem-sucedido
+      autenticado = true;              // [USADO EM: variaveis.cpp - linha 25]
+      usuarioLogado = usuario;         // [USADO EM: variaveis.cpp - linha 26]
+      nivelAcessoLogado = n;           // [USADO EM: variaveis.cpp - linha 27]
+      
+      file.close();
+      
+      Serial.printf("✅ Login: %s (%s)\n", 
+                    usuario.c_str(), 
+                    n.c_str());
+      
+      // Registrar aviso de login (USANDO FUNÇÃO CONVENCIONAL)
+      registrarAvisoLogin(usuario);
+      
+      return true;
+    }
+  }
+  
+  file.close();
+  
+  // Registrar tentativa falha (USANDO FUNÇÃO CONVENCIONAL)
+  registrarAvisoLoginFalha(usuario);
+  
+  return false;
+}
+
+// ===================== API: LISTAR USUÁRIOS =====================
+void apiListarUsuarios() {
+  // [USADO EM: variaveis.h - linha 71 (protótipo)]
+  // [USADO EM: webserver.ino - linha 39 (chamada)]
+  
+  Serial.println("📋 API: Listar usuários chamada");
+  
+  // Verificar autenticação
+  if (!autenticado) {
+    server.send(401, "application/json", "{\"erro\":\"Não autenticado\"}");
+    return;
+  }
+  
+  // Verificar permissão (apenas admin e síndico)
+  if (nivelAcessoLogado != "admin" && nivelAcessoLogado != "sindico") {
+    server.send(403, "application/json", "{\"erro\":\"Permissão negada\"}");
+    return;
+  }
+  
+  File file = SPIFFS.open(ARQ_USUARIOS, FILE_READ);
+  if (!file) {
+    server.send(500, "application/json", "{\"erro\":\"Falha ao abrir arquivo\"}");
+    return;
+  }
+  
+  DynamicJsonDocument doc(4096);
+  JsonArray usuarios = doc.createNestedArray("usuarios");
+  
+  while (file.available()) {
+    String linha = file.readStringUntil('\n');
+    linha.trim();
+    
+    if (linha.isEmpty()) continue;
+    
+    int p1 = linha.indexOf(';');
+    int p2 = linha.indexOf(';', p1 + 1);
+    
+    if (p1 == -1 || p2 == -1) continue;
+    
+    JsonObject usuario = usuarios.createNestedObject();
+    usuario["usuario"] = linha.substring(0, p1);
+    usuario["nivel"] = linha.substring(p2 + 1);
+    // NÃO enviar a senha por segurança
+  }
+  
+  file.close();
+  
+  String resposta;
+  serializeJson(doc, resposta);
+  server.send(200, "application/json", resposta);
+}
+
+// ===================== API: CRIAR USUÁRIO =====================
+void apiCriarUsuario() {
+  // [NOVA FUNÇÃO - adicionar protótipo em variaveis.h]
+  
+  Serial.println("📋 API: Criar usuário chamada");
+  
+  // Verificar autenticação
+  if (!autenticado) {
+    server.send(401, "application/json", "{\"erro\":\"Não autenticado\"}");
+    return;
+  }
+  
+  // Verificar permissão
+  if (nivelAcessoLogado != "admin" && nivelAcessoLogado != "sindico") {
+    server.send(403, "application/json", "{\"erro\":\"Permissão negada\"}");
+    return;
+  }
+  
+  // Verificar se tem body
+  if (!server.hasArg("plain")) {
+    server.send(400, "application/json", "{\"erro\":\"Body ausente\"}");
+    return;
+  }
+  
+  // Parse JSON
+  DynamicJsonDocument doc(256);
+  DeserializationError erro = deserializeJson(doc, server.arg("plain"));
+  
+  if (erro) {
+    server.send(400, "application/json", "{\"erro\":\"JSON inválido\"}");
+    return;
+  }
+  
+  String usuario = doc["usuario"] | "";
+  String senha = doc["senha"] | "";
+  String nivel = doc["nivel"] | "";
+  
+  // Validar dados
+  if (usuario.isEmpty() || senha.isEmpty() || nivel.isEmpty()) {
+    server.send(400, "application/json", "{\"erro\":\"Dados incompletos\"}");
+    return;
+  }
+  
+  // Verificar se usuário já existe
+  File file = SPIFFS.open(ARQ_USUARIOS, FILE_READ);
+  if (file) {
+    while (file.available()) {
+      String linha = file.readStringUntil('\n');
+      linha.trim();
+      
+      if (linha.startsWith(usuario + ";")) {
+        file.close();
+        server.send(409, "application/json", "{\"erro\":\"Usuário já existe\"}");
+        return;
+      }
+    }
+    file.close();
+  }
+  
+  // Adicionar novo usuário
+  file = SPIFFS.open(ARQ_USUARIOS, FILE_APPEND);
+  if (!file) {
+    server.send(500, "application/json", "{\"erro\":\"Falha ao gravar\"}");
+    return;
+  }
+  
+  file.printf("%s;%s;%s\n", usuario.c_str(), senha.c_str(), nivel.c_str());
+  file.close();
+  
+  // Registrar aviso
+  registrarAviso("usuario_criado", "Novo usuário criado", usuarioLogado);
+  
+  server.send(201, "application/json", "{\"ok\":true}");
+}
+
+// ===================== API: EXCLUIR USUÁRIO =====================
+void apiExcluirUsuario() {
+  // [NOVA FUNÇÃO - adicionar protótipo em variaveis.h]
+  
+  Serial.println("📋 API: Excluir usuário chamada");
+  
+  // Verificar autenticação e permissão
+  if (!autenticado || (nivelAcessoLogado != "admin" && nivelAcessoLogado != "sindico")) {
+    server.send(403, "application/json", "{\"erro\":\"Permissão negada\"}");
+    return;
+  }
+  
+  // Verificar se tem body
+  if (!server.hasArg("plain")) {
+    server.send(400, "application/json", "{\"erro\":\"Body ausente\"}");
+    return;
+  }
+  
+  // Parse JSON
+  DynamicJsonDocument doc(256);
+  deserializeJson(doc, server.arg("plain"));
+  
+  String usuarioParaExcluir = doc["usuario"] | "";
+  
+  if (usuarioParaExcluir.isEmpty()) {
+    server.send(400, "application/json", "{\"erro\":\"Usuário não especificado\"}");
+    return;
+  }
+  
+  // Não permitir excluir a si mesmo
+  if (usuarioParaExcluir == usuarioLogado) {
+    server.send(400, "application/json", "{\"erro\":\"Não pode excluir a si mesmo\"}");
+    return;
+  }
+  
+  // Ler arquivo atual e remover usuário
+  File file = SPIFFS.open(ARQ_USUARIOS, FILE_READ);
+  if (!file) {
+    server.send(500, "application/json", "{\"erro\":\"Falha ao ler arquivo\"}");
+    return;
+  }
+  
+  String novoConteudo = "";
+  bool encontrado = false;
+  
+  while (file.available()) {
+    String linha = file.readStringUntil('\n');
+    linha.trim();
+    
+    if (linha.isEmpty()) continue;
+    
+    if (!linha.startsWith(usuarioParaExcluir + ";")) {
+      novoConteudo += linha + "\n";
+    } else {
+      encontrado = true;
+    }
+  }
+  
+  file.close();
+  
+  if (!encontrado) {
+    server.send(404, "application/json", "{\"erro\":\"Usuário não encontrado\"}");
+    return;
+  }
+  
+  // Reescrever arquivo
+  file = SPIFFS.open(ARQ_USUARIOS, FILE_WRITE);
+  if (!file) {
+    server.send(500, "application/json", "{\"erro\":\"Falha ao gravar\"}");
+    return;
+  }
+  
+  file.print(novoConteudo);
+  file.close();
+  
+  // Registrar aviso
+  registrarAviso("usuario_excluido", 
+                 String("Usuário '") + usuarioParaExcluir + "' excluído", 
+                 usuarioLogado);
+  
+  server.send(200, "application/json", "{\"ok\":true}");
+}
+
+// ===================== HANDLER DE LOGIN =====================
+void processarLogin() {
+  // [USADO EM: variaveis.h - linha 69 (protótipo)]
+  // [USADO EM: webserver.ino - linha 37 (chamada)]
+  
+  Serial.println("🔐 API Login chamada");
+  
+  if (!server.hasArg("plain")) {
+    server.send(400, "application/json", "{\"erro\":\"Body ausente\"}");
+    return;
+  }
+  
+  String body = server.arg("plain");
+  Serial.println("📦 Body recebido: " + body);
+  
+  DynamicJsonDocument doc(256);
+  DeserializationError erro = deserializeJson(doc, body);
+  
+  if (erro) {
+    server.send(400, "application/json", "{\"erro\":\"JSON inválido\"}");
+    return;
+  }
+  
+  String usuario = doc["usuario"] | "";
+  String senha = doc["senha"] | "";
+  
+  Serial.printf("👤 Tentativa login: %s\n", usuario.c_str());
+  
+  if (autenticarUsuario(usuario, senha)) {
+    // Login bem-sucedido
+    DynamicJsonDocument resposta(256);
+    resposta["token"] = "local";  // Simples, poderia ser JWT
+    resposta["usuario"] = usuarioLogado;
+    resposta["nivel"] = nivelAcessoLogado;
+    
+    String json;
+    serializeJson(resposta, json);
+    
+    server.send(200, "application/json", json);
+  } else {
+    // Login falhou
+    server.send(401, "application/json", 
+                "{\"erro\":\"Usuário ou senha inválidos\"}");
+  }
+}
+
+// ===================== HANDLER DE LOGOUT =====================
+void processarLogout() {
+  // [USADO EM: variaveis.h - linha 70 (protótipo)]
+  // [USADO EM: webserver.ino - linha 38 (chamada)]
+  
+  Serial.println("🚪 API Logout chamada");
+  
+  // Registrar aviso de logout (USANDO FUNÇÃO CONVENCIONAL)
+  if (autenticado) {
+    registrarAvisoLogout(usuarioLogado);
+  }
+  
+  // Limpar estado
+  autenticado = false;
+  usuarioLogado = "";
+  nivelAcessoLogado = "";
+  
+  server.send(200, "application/json", "{\"ok\":true}");
+}
+
+
+
+=== C:\Users\Ailton\Documents\Arduino\terreo\caixa_terreo\vazao.ino ===
+
+// vazao.ino
+// Sensor de vazão YF-S201
+#include "variaveis.h"
+
+// ===================== DEFINIÇÕES LOCAIS =====================
+#define INTERRUPCAO_VAZAO 0           // Número da interrupção (pino 34 = interrupt 0 em alguns ESP32)
+#define PULSOS_POR_LITRO 450          // YF-S201: ~450 pulsos/litro
+#define INTERVALO_CALCULO 1000        // ms - intervalo para calcular vazão instantânea
+#define FATOR_CALIBRACAO 7.5          // Fórmula: Q(L/min) = f(Hz) / 7.5
+
+// ===================== VARIÁVEIS LOCAIS =====================
+volatile unsigned long contadorPulsos = 0;  // Volatile para interrupção
+unsigned long ultimoPulsoContado = 0;
+unsigned long ultimoCalculoVazao = 0;
+unsigned long pulsosNoIntervalo = 0;
+float vazaoInstantaneaCalc = 0.0;
+float vazaoAcumuladaHoje = 0.0;
+unsigned long inicioDia = 0;
+bool sensorVazaoInicializado= false;
+
+// ===================== FUNÇÃO DE INTERRUPÇÃO =====================
+void IRAM_ATTR contarPulsoVazao() {
+  // [FUNÇÃO DE INTERRUPÇÃO - chamada a cada pulso do sensor]
+  contadorPulsos++;
+}
+
+// ===================== INICIALIZAÇÃO =====================
+void inicializarSensorVazao() {
+  // [USADO EM: variaveis.h - linha 102 (protótipo)]
+  // [USADO EM: sensores.ino - linha 53 (chamada)]
+  
+  Serial.println("💧 Inicializando sensor de vazão...");
+  
+  // Configurar pino
+  pinMode(PINO_SENSOR_VAZAO, INPUT_PULLUP);  // [USADO EM: variaveis.h - linha 21]
+  
+  // Configurar interrupção (se o pino suportar)
+  // Nota: Nem todos os pinos do ESP32 suportam interrupção
+  // Pino 34 não suporta interrupção em algumas placas
+  // Vamos usar polling como fallback
+  
+  // Tentar configurar interrupção (para pinos que suportam)
+  bool interrupcaoConfigurada = false;
+  
+  // Lista de pinos que geralmente suportam interrupção no ESP32
+  const int pinosComInterrupcao[] = {0, 2, 4, 5, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 25, 26, 27, 32, 33};
+  const int numPinos = sizeof(pinosComInterrupcao) / sizeof(pinosComInterrupcao[0]);
+  
+  // Verificar se nosso pino está na lista
+  for (int i = 0; i < numPinos; i++) {
+    if (PINO_SENSOR_VAZAO == pinosComInterrupcao[i]) {
+      attachInterrupt(digitalPinToInterrupt(PINO_SENSOR_VAZAO), contarPulsoVazao, FALLING);
+      interrupcaoConfigurada = true;
+      Serial.println("✅ Interrupção configurada para sensor de vazão");
+      break;
+    }
+  }
+  
+  if (!interrupcaoConfigurada) {
+    Serial.println("⚠️ Pino não suporta interrupção, usando polling");
+  }
+  
+  // Inicializar contadores
+  contadorPulsos = 0;
+  ultimoPulsoContado = 0;
+  pulsosVazao = 0;  // [USADO EM: variaveis.cpp - linha 42]
+  vazaoInstantanea = 0.0;  // [USADO EM: variaveis.cpp - linha 40]
+  vazaoTotalDiaria = 0.0;  // [USADO EM: variaveis.cpp - linha 41]
+  
+  // Marcar início do dia
+  inicioDia = millis();
+  
+  sensorVazaoInicializado= true;
+  Serial.println("✅ Sensor de vazão inicializado");
+}
+
+// ===================== LEITURA POR POLLING =====================
+void atualizarPulsosPolling() {
+  // Fallback para pinos sem interrupção
+  
+  static int ultimoEstado = HIGH;
+  int estadoAtual = digitalRead(PINO_SENSOR_VAZAO);
+  
+  // Detectar borda de descida (FALLING)
+  if (ultimoEstado == HIGH && estadoAtual == LOW) {
+    contadorPulsos++;
+  }
+  
+  ultimoEstado = estadoAtual;
+}
+
+// ===================== LEITURA DA VAZÃO INSTANTÂNEA =====================
+float lerVazaoInstantanea() {
+  // [USADO EM: variaveis.h - linha 103 (protótipo)]
+  // [USADO EM: sensores.ino - linha 72 (chamada)]
+  
+  if (!sensorVazaoInicializado) {
+    Serial.println("⚠️ Sensor de vazão não inicializado!");
+    return 0.0;
+  }
+  
+  unsigned long agora = millis();
+  
+  // Atualizar pulsos (se estiver usando polling)
+  atualizarPulsosPolling();
+  
+  // Calcular vazão instantânea a cada intervalo
+  if (agora - ultimoCalculoVazao >= INTERVALO_CALCULO) {
+    unsigned long pulsosDelta = contadorPulsos - ultimoPulsoContado;
+    unsigned long tempoDelta = agora - ultimoCalculoVazao;
+    
+    if (tempoDelta > 0) {
+      // Calcular frequência (Hz)
+      float frequencia = (pulsosDelta * 1000.0) / tempoDelta;
+      
+      // Converter para vazão (L/min)
+      // Fórmula do YF-S201: Q(L/min) = f(Hz) / 7.5
+      vazaoInstantaneaCalc = frequencia / FATOR_CALIBRACAO;
+      
+      // Atualizar variável global
+      vazaoInstantanea = vazaoInstantaneaCalc;  // [USADO EM: variaveis.cpp - linha 40]
+      
+      // Atualizar total diário
+      float litrosNoIntervalo = pulsosDelta / (float)PULSOS_POR_LITRO;
+      vazaoAcumuladaHoje += litrosNoIntervalo;
+      vazaoTotalDiaria = vazaoAcumuladaHoje;  // [USADO EM: variaveis.cpp - linha 41]
+      
+      // Atualizar contador global
+      pulsosVazao = contadorPulsos;  // [USADO EM: variaveis.cpp - linha 42]
+    }
+    
+    ultimoPulsoContado = contadorPulsos;
+    ultimoCalculoVazao = agora;
+    
+    // Debug ocasional
+    static unsigned long ultimoDebug = 0;
+    if (agora - ultimoDebug > 30000 && vazaoInstantaneaCalc > 0.1) {
+      Serial.printf("💧 Vazão: %.2f L/min | Total hoje: %.1f L\n", 
+                    vazaoInstantaneaCalc, vazaoAcumuladaHoje);
+      ultimoDebug = agora;
+    }
+  }
+  
+  return vazaoInstantaneaCalc;
+}
+
+// ===================== CÁLCULO DA VAZÃO TOTAL DIÁRIA =====================
+float calcularVazaoTotalDiaria() {
+  // [USADO EM: variaveis.h - linha 104 (protótipo)]
+  
+  // Se já temos um dia completo, reiniciar contagem
+  if (millis() - inicioDia > 86400000) { // 24 horas
+    resetContadorVazaoDiario();
+  }
+  
+  return vazaoAcumuladaHoje;
+}
+
+// ===================== RESET DO CONTADOR DIÁRIO =====================
+void resetContadorVazaoDiario() {
+  // [USADO EM: variaveis.h - linha 105 (protótipo)]
+  
+  Serial.println("🔄 Resetando contador diário de vazão");
+  
+  vazaoAcumuladaHoje = 0.0;
+  vazaoTotalDiaria = 0.0;  // [USADO EM: variaveis.cpp - linha 41]
+  inicioDia = millis();
+  
+  // Registrar aviso
+  registrarAviso("sistema", "Contador diário de vazão resetado", "sistema");
+}
+
+// ===================== CALIBRAÇÃO DO SENSOR =====================
+void calibrarSensorVazao(float volumeConhecidoLitros) {
+  // [FUNÇÃO INTERNAL - calibração manual]
+  
+  if (volumeConhecidoLitros <= 0) {
+    Serial.println("❌ Volume de calibração inválido");
+    return;
+  }
+  
+  Serial.println("🎯 Iniciando calibração do sensor de vazão...");
+  Serial.printf("Passe %.1f litros de água pelo sensor\n", volumeConhecidoLitros);
+  Serial.println("A calibração começará em 5 segundos...");
+  delay(5000);
+  
+  unsigned long pulsosInicial = contadorPulsos;
+  Serial.println("⏳ Aguardando passagem de água...");
+  Serial.println("Pressione qualquer tecla quando terminar...");
+  
+  // Aguardar entrada do usuário (simplificado)
+  while (!Serial.available()) {
+    delay(100);
+    atualizarPulsosPolling();
+  }
+  
+  // Limpar buffer serial
+  while (Serial.available()) Serial.read();
+  
+  unsigned long pulsosFinal = contadorPulsos;
+  unsigned long pulsosTotal = pulsosFinal - pulsosInicial;
+  
+  if (pulsosTotal > 0) {
+    float pulsosPorLitro = pulsosTotal / volumeConhecidoLitros;
+    
+    Serial.println("\n📊 RESULTADO DA CALIBRAÇÃO:");
+    Serial.printf("Volume conhecido: %.1f litros\n", volumeConhecidoLitros);
+    Serial.printf("Pulsos contados: %lu\n", pulsosTotal);
+    Serial.printf("Pulsos por litro: %.1f\n", pulsosPorLitro);
+    Serial.printf("Fator atual: %d\n", PULSOS_POR_LITRO);
+    Serial.println("(Ajuste PULSOS_POR_LITRO no código)");
+  } else {
+    Serial.println("❌ Calibração falhou - nenhum pulso detectado");
+  }
+}
+
+// ===================== DIAGNÓSTICO DO SENSOR =====================
+void diagnosticarSensorVazao() {
+  // [FUNÇÃO INTERNA - debug]
+  
+  Serial.println("\n🔍 DIAGNÓSTICO DO SENSOR DE VAZÃO");
+  Serial.println("==================================");
+  
+  // Status básico
+  Serial.printf("Sensor inicializado: %s\n", sensorVazaoInicializado? "SIM" : "NÃO");
+  Serial.printf("Pulsos totais: %lu\n", contadorPulsos);
+  Serial.printf("Vazão instantânea: %.2f L/min\n", vazaoInstantaneaCalc);
+  Serial.printf("Total hoje: %.1f L\n", vazaoAcumuladaHoje);
+  Serial.printf("Tempo desde início: %lu min\n", (millis() - inicioDia) / 60000);
+  
+  // Teste de leitura rápida
+  Serial.println("\nTeste de leitura rápida (5 segundos):");
+  unsigned long pulsosInicio = contadorPulsos;
+  unsigned long tempoInicio = millis();
+  
+  for (int i = 0; i < 5; i++) {
+    atualizarPulsosPolling();
+    Serial.printf("  Segundo %d: %lu pulsos\n", i + 1, contadorPulsos - pulsosInicio);
+    delay(1000);
+  }
+  
+  unsigned long pulsosFim = contadorPulsos;
+  unsigned long tempoFim = millis();
+  
+  if (tempoFim - tempoInicio > 0) {
+    float frequencia = ((pulsosFim - pulsosInicio) * 1000.0) / (tempoFim - tempoInicio);
+    float vazaoTeste = frequencia / FATOR_CALIBRACAO;
+    
+    Serial.printf("\nFrequência medida: %.1f Hz\n", frequencia);
+    Serial.printf("Vazão estimada: %.2f L/min\n", vazaoTeste);
+  }
+  
+  // Teste de pino
+  Serial.println("\nTeste de pino:");
+  for (int i = 0; i < 10; i++) {
+    int estado = digitalRead(PINO_SENSOR_VAZAO);
+    Serial.printf("  Leitura %d: %s\n", i + 1, estado == HIGH ? "HIGH" : "LOW");
+    delay(100);
+  }
+  
+  Serial.println("==================================\n");
+}
+
+// ===================== DETECÇÃO DE VAZAMENTO =====================
+bool detectarPossivelVazamento() {
+  // [FUNÇÃO INTERNA - lógica de detecção]
+  
+  static unsigned long ultimaDetecao = 0;
+  static float ultimaVazaoNoturna = 0.0;
+  
+  // Obter hora atual (simplificado)
+  unsigned long agora = millis();
+  unsigned long minutosDesdeMeiaNoite = (agora / 60000) % 1440; // 1440 min/dia
+  
+  // Período noturno (00:00 às 06:00)
+  bool periodoNoturno = (minutosDesdeMeiaNoite >= 0 && minutosDesdeMeiaNoite < 360);
+  
+  if (periodoNoturno) {
+    // Durante a noite, esperamos vazão quase zero
+    if (vazaoInstantaneaCalc > 0.5) { // Mais de 0.5 L/min à noite
+      if (agora - ultimaDetecao > 300000) { // A cada 5 minutos
+        Serial.println("⚠️ POSSÍVEL VAZAMENTO DETECTADO (vazão à noite)");
+        registrarAviso("vazamento", 
+                      String("Vazão noturna detectada: ") + vazaoInstantaneaCalc + " L/min", 
+                      "sistema");
+        ultimaDetecao = agora;
+        return true;
+      }
+    }
+  }
+  
+  // Vazão constante por muito tempo (possível vazamento)
+  static unsigned long inicioVazaoConstante = 0;
+  static float vazaoInicial = 0.0;
+  
+  if (vazaoInstantaneaCalc > 0.2) { // Vazão significativa
+    if (inicioVazaoConstante == 0) {
+      inicioVazaoConstante = agora;
+      vazaoInicial = vazaoInstantaneaCalc;
+    } else if (agora - inicioVazaoConstante > 3600000) { // 1 hora
+      // Verificar se a vazão está constante (+- 10%)
+      if (abs(vazaoInstantaneaCalc - vazaoInicial) < (vazaoInicial * 0.1)) {
+        Serial.println("⚠️ Vazão constante por 1 hora - possível vazamento");
+        registrarAviso("vazamento", "Vazão constante por 1 hora detectada", "sistema");
+        inicioVazaoConstante = 0;
+        return true;
+      }
+    }
+  } else {
+    inicioVazaoConstante = 0;
+  }
+  
+  return false;
+}
+
+// ===================== FUNÇÕES AUXILIARES =====================
+float getVazaoMediaUltimaHora() {
+  // Retorna vazão média da última hora
+  // Implementação simplificada
+  return vazaoInstantaneaCalc;
+}
+
+void resetSensorVazao() {
+  Serial.println("🔄 Resetando sensor de vazão...");
+  contadorPulsos = 0;
+  ultimoPulsoContado = 0;
+  vazaoInstantaneaCalc = 0.0;
+  sensorVazaoInicializado= false;
+  inicializarSensorVazao();
+}
+
+
+
+=== C:\Users\Ailton\Documents\Arduino\terreo\caixa_terreo\webserver.ino ===
+
+// webserver.ino
+#include "variaveis.h"
+
+// ===================== INICIALIZAÇÃO DO WEB SERVER =====================
+void inicializarWebServer() {
+  // [USADO EM: variaveis.h - linha 63 (protótipo)]
+  // [USADO EM: caixa_terreo.ino - linha 38 (chamada)]
+  
+  Serial.println("🌐 Configurando Web Server...");
+  
+  // 1. Configurar rotas da API
+  configurarRotasAPI();
+  
+  // 2. Configurar rotas estáticas (HTML/CSS/JS)
+  configurarRotasEstaticas();
+  
+  // 3. Rota 404 personalizada
+  server.onNotFound([]() {
+    // [FUNÇÃO ANÔNIMA - tratamento de rotas não encontradas]
+    Serial.printf("❌ Rota não encontrada: %s\n", server.uri().c_str());
+    
+    if (server.method() == HTTP_OPTIONS) {
+      // CORS preflight
+      server.sendHeader("Access-Control-Allow-Origin", "*");
+      server.sendHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+      server.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+      server.send(204);
+    } else {
+      server.send(404, "text/plain", "Rota não encontrada: " + server.uri());
+    }
+  });
+  
+  // 4. Iniciar servidor
+  server.begin();
+  Serial.println("✅ Web Server iniciado na porta 3000");
+}
+
+// ===================== ROTAS DA API =====================
+void configurarRotasAPI() {
+  // [USADO EM: variaveis.h - linha 64 (protótipo)]
+  // [USADO EM: webserver.ino - linha 20 (chamada)]
+  
+  Serial.println("🔗 Configurando rotas da API...");
+  
+  // ===== AUTENTICAÇÃO =====
+  server.on("/api/login", HTTP_POST, processarLogin);      // [USADO EM: usuarios.ino - linha 195]
+  server.on("/api/logout", HTTP_POST, processarLogout);    // [USADO EM: usuarios.ino - linha 232]
+  
+  // ===== USUÁRIOS =====
+  server.on("/api/usuarios", HTTP_GET, apiListarUsuarios);    // [USADO EM: usuarios.ino - linha 51]
+  server.on("/api/usuarios", HTTP_POST, apiCriarUsuario);     // [USADO EM: usuarios.ino - linha 75]
+  server.on("/api/usuarios", HTTP_DELETE, apiExcluirUsuario); // [USADO EM: usuarios.ino - linha 131]
+  
+  // TODO: Adicionar PUT para editar usuário
+  
+  // ===== AVISOS =====
+  server.on("/api/avisos", HTTP_GET, apiListarAvisos);        // [USADO EM: avisos.ino - linha 43]
+  
+  // ===== ESTADO DO SISTEMA =====
+  server.on("/api/status", HTTP_GET, []() {
+    // [FUNÇÃO ANÔNIMA - status do sistema]
+    Serial.println("📊 API Status chamada");
+    
+    DynamicJsonDocument doc(512);
+    
+    // Informações do sistema
+    doc["sistema"] = "caixa_terreo";
+    doc["versao"] = "1.0.0";
+    doc["datahora"] = getDataHoraAtual();  // [USADO EM: variaveis.cpp - linha 49]
+    doc["modoAP"] = modoAP;                // [USADO EM: variaveis.cpp - linha 24]
+    doc["hasInternet"] = hasInternet;      // [USADO EM: variaveis.cpp - linha 23]
+    doc["autenticado"] = autenticado;      // [USADO EM: variaveis.cpp - linha 25]
+    
+    if (autenticado) {
+      doc["usuario"] = usuarioLogado;      // [USADO EM: variaveis.cpp - linha 26]
+      doc["nivel"] = nivelAcessoLogado;    // [USADO EM: variaveis.cpp - linha 27]
+    }
+    
+    // Estado da caixa
+    JsonObject caixa = doc.createNestedObject("caixa");
+    caixa["nivelPercentual"] = estadoAtual.nivelPercentual;
+    caixa["nivelCm"] = estadoAtual.nivelCm;
+    caixa["bombaA"] = estadoAtual.bombaAAtiva;
+    caixa["bombaB"] = estadoAtual.bombaBAtiva;
+    caixa["ultimaAtualizacao"] = estadoAtual.ultimaAtualizacao;
+    
+    // WiFi
+    JsonObject wifi = doc.createNestedObject("wifi");
+    wifi["status"] = WiFi.status();
+    if (modoAP) {
+      wifi["ip"] = WiFi.softAPIP().toString();
+      wifi["mode"] = "AP";
+    } else {
+      wifi["ip"] = WiFi.localIP().toString();
+      wifi["mode"] = "STA";
+      wifi["rssi"] = WiFi.RSSI();
+      wifi["ssid"] = WiFi.SSID();
+    }
+    
+    // SPIFFS
+    JsonObject spiffs = doc.createNestedObject("spiffs");
+    spiffs["totalBytes"] = SPIFFS.totalBytes();
+    spiffs["usedBytes"] = SPIFFS.usedBytes();
+    spiffs["freeBytes"] = SPIFFS.totalBytes() - SPIFFS.usedBytes();
+    
+    String resposta;
+    serializeJson(doc, resposta);
+    
+    server.sendHeader("Access-Control-Allow-Origin", "*");
+    server.send(200, "application/json", resposta);
+  });
+  
+  // ===== CONTROLE DAS BOMBAS =====
+  server.on("/api/bombas/ligar/A", HTTP_POST, []() {
+    // [FUNÇÃO ANÔNIMA - AGORA USA FUNÇÕES DE bombas.ino]
+    Serial.println("🔧 API: Ligar bomba A");
+    
+    if (!autenticado) {
+      server.send(401, "application/json", "{\"erro\":\"Não autenticado\"}");
+      return;
+    }
+    
+    // Verificar permissão (admin, sindico, subsindico)
+    if (nivelAcessoLogado != "admin" && 
+        nivelAcessoLogado != "sindico" && 
+        nivelAcessoLogado != "subsindico") {
+      server.send(403, "application/json", "{\"erro\":\"Permissão negada\"}");
+      return;
+    }
+    
+    // Usar função de bombas.ino
+    ligarBombaA();
+    
+    server.send(200, "application/json", "{\"ok\":true, \"mensagem\":\"Bomba A ligada\"}");
+  });
+  
+  server.on("/api/bombas/ligar/B", HTTP_POST, []() {
+    // [FUNÇÃO ANÔNIMA - AGORA USA FUNÇÕES DE bombas.ino]
+    Serial.println("🔧 API: Ligar bomba B");
+    
+    if (!autenticado) {
+      server.send(401, "application/json", "{\"erro\":\"Não autenticado\"}");
+      return;
+    }
+    
+    // Verificar permissão (admin, sindico, subsindico)
+    if (nivelAcessoLogado != "admin" && 
+        nivelAcessoLogado != "sindico" && 
+        nivelAcessoLogado != "subsindico") {
+      server.send(403, "application/json", "{\"erro\":\"Permissão negada\"}");
+      return;
+    }
+    
+    // Usar função de bombas.ino
+    ligarBombaB();
+    
+    server.send(200, "application/json", "{\"ok\":true, \"mensagem\":\"Bomba B ligada\"}");
+  });
+  
+  server.on("/api/bombas/desligar", HTTP_POST, []() {
+    // [FUNÇÃO ANÔNIMA - AGORA USA FUNÇÕES DE bombas.ino]
+    Serial.println("🔧 API: Desligar bombas");
+    
+    if (!autenticado) {
+      server.send(401, "application/json", "{\"erro\":\"Não autenticado\"}");
+      return;
+    }
+    
+    // Verificar permissão (admin, sindico, subsindico)
+    if (nivelAcessoLogado != "admin" && 
+        nivelAcessoLogado != "sindico" && 
+        nivelAcessoLogado != "subsindico") {
+      server.send(403, "application/json", "{\"erro\":\"Permissão negada\"}");
+      return;
+    }
+    
+    // Usar função de bombas.ino
+    desligarBombas();
+    
+    server.send(200, "application/json", "{\"ok\":true, \"mensagem\":\"Bombas desligadas\"}");
+  });
+  
+  Serial.println("✅ Rotas da API configuradas");
+}
+
+// ===================== ROTAS ESTÁTICAS (HTML/CSS/JS) =====================
+void configurarRotasEstaticas() {
+  // [USADO EM: variaveis.h - linha 65 (protótipo)]
+  // [USADO EM: webserver.ino - linha 21 (chamada)]
+  
+  Serial.println("📁 Configurando rotas estáticas...");
+  
+  // Servir arquivos do SPIFFS
+  server.on("/", HTTP_GET, []() {
+    // Redireciona para login
+    server.sendHeader("Location", "/login-localstorage.html");
+    server.send(302, "text/plain", "Redirecting to login...");
+  });
+  
+  // Servir qualquer arquivo do SPIFFS
+  server.onNotFound([]() {
+    // Esta função será chamada para rotas não encontradas nas APIs
+    // Tentar servir como arquivo estático
+    
+    String path = server.uri();
+    
+    // Se acessar diretório, redireciona para index.html
+    if (path.endsWith("/")) {
+      path += "index.html";
+    }
+    
+    // Verificar se o arquivo existe no SPIFFS
+    if (SPIFFS.exists(path)) {
+      // Determinar content type
+      String contentType = getContentType(path);  // [USADO EM: spiffs.ino - linha 59]
+      
+      // Abrir e servir arquivo
+      File file = SPIFFS.open(path, "r");
+      
+      if (!file) {
+        server.send(500, "text/plain", "Erro ao abrir arquivo");
+        return;
+      }
+      
+      // Enviar cabeçalhos CORS para desenvolvimento
+      server.sendHeader("Access-Control-Allow-Origin", "*");
+      
+      // Stream do arquivo para o cliente
+      server.streamFile(file, contentType);
+      file.close();
+      
+      Serial.printf("📄 Arquivo servido: %s (%s)\n", 
+                    path.c_str(), 
+                    contentType.c_str());
+    } else {
+      // Arquivo não existe - já tratamos no onNotFound principal
+      // Esta função só é chamada se a rota não for API
+      server.send(404, "text/plain", "Arquivo não encontrado: " + path);
+    }
+  });
+  
+  // Rotas específicas para páginas HTML (para melhor debug)
+  server.on("/index.html", HTTP_GET, []() { servirArquivo("/index.html"); });
+  server.on("/login-localstorage.html", HTTP_GET, []() { servirArquivo("/login-localstorage.html"); });
+  server.on("/adm.html", HTTP_GET, []() { servirArquivo("/adm.html"); });
+  server.on("/admin.html", HTTP_GET, []() { servirArquivo("/admin.html"); });
+  server.on("/avisos.html", HTTP_GET, []() { servirArquivo("/avisos.html"); });
+  server.on("/controle.html", HTTP_GET, []() { servirArquivo("/controle.html"); });
+  
+  Serial.println("✅ Rotas estáticas configuradas");
+}
+
+// ===================== FUNÇÃO AUXILIAR PARA SERVIR ARQUIVOS =====================
+void servirArquivo(String path) {
+  // [FUNÇÃO INTERNA - não está no header]
+  
+  if (!SPIFFS.exists(path)) {
+    server.send(404, "text/plain", "Arquivo não encontrado: " + path);
+    return;
+  }
+  
+  File file = SPIFFS.open(path, "r");
+  if (!file) {
+    server.send(500, "text/plain", "Erro ao abrir arquivo");
+    return;
+  }
+  
+  String contentType = getContentType(path);
+  
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.streamFile(file, contentType);
+  file.close();
+  
+  Serial.printf("📄 Servindo: %s\n", path.c_str());
+}
+
+// ===================== CORS HEADERS =====================
+void enableCORS() {
+  // [FUNÇÃO INTERNA - para desenvolvimento]
+  
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.sendHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  server.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+}
+
+
+
+=== C:\Users\Ailton\Documents\Arduino\terreo\caixa_terreo\variaveis.h ===
+
+// variaveis.h
+#ifndef VARIAVEIS_H
+#define VARIAVEIS_H
+
+#include <Arduino.h>
+#include <WiFi.h>
+#include <WebServer.h>
+#include <SPIFFS.h>
+#include <ArduinoJson.h>
+#include <WiFiUdp.h>
+#include <NTPClient.h>
+
+// ===================== DEFINIÇÕES BÁSICAS =====================
+#define DIR_DADOS "/dados"
+#define ARQ_USUARIOS "/dados/usuarios.dat"
+#define ARQ_AVISOS "/dados/avisos.dat"
+#define ARQ_REGISTROS "/dados/registros.dat"
+#define ARQ_HISTORICO "/dados/historico.dat"
+
+#define PINO_BOMBA_A 26
+#define PINO_BOMBA_B 27
+
+// ===================== DEFINIÇÕES DE BOMBAS =====================
+#define TEMPO_MINIMO_LIGADA 30000
+#define TEMPO_MAXIMO_LIGADA 300000
+#define INTERVALO_ALTERNANCIA 120000
+
+// ===================== DEFINIÇÕES DE SENSORES =====================
+// Ultrassom (HC-SR04)
+#define PINO_TRIG_ULTRASSOM 32
+#define PINO_ECHO_ULTRASSOM 33
+#define DISTANCIA_MAXIMA_CM 400.0
+#define DISTANCIA_MINIMA_CM 2.0
+
+// Sensor de vazão (mecânico)
+#define PINO_SENSOR_VAZAO 34
+
+// LEDs indicadores
+#define PINO_LED_ALARME 25
+#define PINO_LED_STATUS 14
+#define PINO_LED_NORMAL 12
+
+// Chaves/Buttons manuais
+#define PINO_CHAVE_MANUAL 35
+#define PINO_BOTAO_EMERGENCIA 36
+
+// ===================== DEFINIÇÕES DE ESTADO =====================
+#define ALTURA_MAXIMA_CAIXA 200.0
+#define NIVEL_CRITICO 20.0
+#define NIVEL_ALERTA 40.0
+#define NIVEL_NORMAL 60.0
+
+// ===================== ESTRUTURAS =====================
+struct EstadoCaixa {
+  float nivelPercentual = 100.0;
+  float nivelCm = 0.0;
+  bool vazaoEntrada = false;
+  bool bombaAAtiva = false;
+  bool bombaBAtiva = false;
+  String ultimaAtualizacao = "";
+};
+
+// ===================== VARIÁVEIS GLOBAIS (extern) =====================
+// WiFi
+extern const char* SSID;
+extern const char* PASSWORD;
+extern const char* AP_SSID;
+extern const char* AP_PASSWORD;
+
+// Estado do sistema
+extern bool hasInternet;
+extern bool modoAP;
+extern bool autenticado;
+extern String usuarioLogado;
+extern String nivelAcessoLogado;
+
+// Estado da caixa
+extern EstadoCaixa estadoAtual;
+
+// Controle de bombas
+extern unsigned long tempoLigadaBombaA;
+extern unsigned long tempoLigadaBombaB;
+extern unsigned long ultimaAlternancia;
+extern bool bombaPrimaria;
+
+// Sensores
+extern float ultimaLeituraUltrassom;
+extern bool vazaoInstantanea;
+extern float vazaoTotalDiaria;
+extern unsigned long pulsosVazao;
+extern bool chaveManualAtiva;
+extern bool botaoEmergenciaPressionado;
+
+// Objetos globais
+extern WebServer server;
+extern WiFiUDP ntpUDP;
+extern NTPClient timeClient;
+
+// ===================== PROTÓTIPOS DE FUNÇÃO =====================
+// WiFi
+void inicializarWiFi();
+void iniciarModoAP();
+void verificarConexao();
+
+// Tempo (baseado em NTP)
+void inicializarTimeClient();
+String getDataHoraAtual();
+String getDataAtual();
+String getHoraAtual();
+
+// SPIFFS
+void inicializarSPIFFS();
+bool criarDiretorioSeNaoExistir(String caminho);
+String getContentType(String filename);
+bool verificarArquivosEssenciais();
+
+// Usuários
+void inicializarBancoUsuarios();
+bool autenticarUsuario(String usuario, String senha);
+void apiListarUsuarios();
+void apiCriarUsuario();
+void apiExcluirUsuario();
+
+// Web Server
+void inicializarWebServer();
+void configurarRotasAPI();
+void configurarRotasEstaticas();
+
+// API Handlers
+void processarLogin();
+void processarLogout();
+void apiListarAvisos();
+
+// Bombas
+void ligarBombaA();
+void ligarBombaB();
+void desligarBombas();
+void ligarBombasAB();
+void controleAutomaticoBombas();
+void verificarSegurancaBombas();
+void inicializarControleBombas();
+
+// Avisos
+void registrarAviso(String tipo, String mensagem, String usuario = "");
+void inicializarSistemaAvisos();
+
+// Estado da Caixa
+void inicializarEstadoCaixa();
+void atualizarEstadoCaixa(float nivelCm, bool vazaoEntrada);
+void verificarMudancasCriticas();
+String getStatusCaixa();
+String getCorStatus();
+int estimarTempoEsgotamento();
+void imprimirRelatorioEstado();
+
+// Sensores
+void inicializarTodosSensores();
+void lerTodosSensores();
+void diagnosticarSensores();
+
+// Ultrassom
+void inicializarSensorUltrassom();
+float lerNivelUltrassom();
+bool verificarSensorUltrassomOk();
+
+// Vazão
+void inicializarSensorVazao();
+bool lerVazaoInstantanea();
+float calcularVazaoTotalDiaria();
+void resetContadorVazaoDiario();
+void verificarFaltaProlongada();
+
+// LEDs
+void inicializarLeds();
+void atualizarLedsStatus();
+void piscarLedAlarme(int vezes, int intervalo);
+void setLedStatus(bool estado);
+void indicarEvento(String tipoEvento);
+
+// Chaves
+void inicializarChaves();
+bool lerChaveManual();
+bool lerBotaoEmergencia();
+void verificarInterrupcoesManuais();
+
+#endif // VARIAVEIS_H
+
+
+
+=== C:\Users\Ailton\Documents\Arduino\terreo\caixa_terreo\variaveis.cpp ===
+
+// variaveis.cpp
+#include "variaveis.h"
+
+// ===================== WIFI =====================
+const char* SSID = "esp32_caixa";
+const char* PASSWORD = "Config123#";
+const char* AP_SSID = "caixa_agua_aquarios";
+const char* AP_PASSWORD = "@caixa#C1234c!";
+
+// ===================== VARIÁVEIS DE ESTADO =====================
+bool hasInternet = false;
+bool modoAP = false;
+bool autenticado = false;
+String usuarioLogado = "";
+String nivelAcessoLogado = "";
+
+// ===================== ESTADO DA CAIXA =====================
+EstadoCaixa estadoAtual;
+
+// ===================== CONTROLE DE BOMBAS =====================
+unsigned long tempoLigadaBombaA = 0;
+unsigned long tempoLigadaBombaB = 0;
+unsigned long ultimaAlternancia = 0;
+bool bombaPrimaria = true;
+
+// ===================== VARIÁVEIS DE SENSORES =====================
+// Ultrassom
+float ultimaLeituraUltrassom = 0.0;
+
+// Vazão
+bool vazaoInstantanea = false;
+float vazaoTotalDiaria = 0.0;
+unsigned long pulsosVazao = 0;
+unsigned long ultimaContagemVazao = 0;
+
+// Chaves
+bool chaveManualAtiva = false;
+bool botaoEmergenciaPressionado = false;
+
+// ===================== OBJETOS GLOBAIS =====================
+WebServer server(3000);
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "pool.ntp.org", -3 * 3600, 60000);
+
+

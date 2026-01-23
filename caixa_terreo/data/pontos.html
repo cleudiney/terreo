@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Pontos do Dia - Caixa d'Água</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Bootstrap LOCAL -->
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/css/bootstrap-icons.css">
+
+  <!-- CSS global -->
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/navbar.css">
+
+  <style>
+    body {
+      background: #f8f9fa;
+    }
+    .card {
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,.1);
+      border: none;
+      margin-bottom: 20px;
+    }
+    .card-header {
+      background: linear-gradient(135deg,#1976d2,#1565c0);
+      color: white;
+      font-weight: 600;
+    }
+    .table th {
+      background: #1976d2;
+      color: white;
+      white-space: nowrap;
+    }
+    .loading {
+      text-align: center;
+      padding: 30px;
+      color: #6c757d;
+    }
+  </style>
+
+  <!-- CONFIGURAÇÃO DO DATA LOADER -->
+  <script>
+    window.DATA_CONFIG = {
+      type: 'pontos',
+      file: 'pontos.dat',
+      target: '#conteudo'
+    };
+  </script>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<div id="navbar"></div>
+
+<main class="container mt-4">
+
+  <h2 class="text-center mb-4">
+    <i class="bi bi-calendar-day"></i>
+    Pontos de Medição do Dia
+  </h2>
+
+  <!-- CONTEÚDO -->
+  <div id="conteudo">
+    <div class="loading">
+      Carregando pontos do dia...
+    </div>
+  </div>
+
+  <!-- GRÁFICO -->
+  <div class="card mt-4">
+    <div class="card-header">
+      <i class="bi bi-graph-up"></i> Evolução do Nível
+    </div>
+    <div class="card-body">
+      <canvas id="graficoNivel" height="100"></canvas>
+    </div>
+  </div>
+
+</main>
+
+<!-- JS LOCAL -->
+<script src="/js/jquery-3.7.1.min.js"></script>
+<script src="/js/popper.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+<script src="/js/chart.min.js"></script>
+
+<!-- Navbar -->
+<script src="/js/navbar.js"></script>
+
+<!-- Segurança -->
+<script src="/js/auth-guard.js"></script>
+<script>
+  protegerPagina(['admin','sindico','operador']);
+</script>
+
+<!-- DATA LOADER -->
+<script src="/js/data-loader.js"></script>
+
+</body>
+</html>

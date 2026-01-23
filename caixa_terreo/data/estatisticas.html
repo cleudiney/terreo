@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Estatísticas - Caixa d'Água</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/css/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/navbar.css">
+
+  <style>
+    body { background: #eef1f4; }
+    .stat-card {
+      border-radius: 14px;
+      padding: 20px;
+      color: white;
+      box-shadow: 0 4px 10px rgba(0,0,0,.15);
+    }
+    .bg-hoje { background: linear-gradient(135deg,#1976d2,#0d47a1); }
+    .bg-semana { background: linear-gradient(135deg,#388e3c,#1b5e20); }
+    .bg-mes { background: linear-gradient(135deg,#f57c00,#e65100); }
+    .badge-consumo { font-size: .9rem; }
+  </style>
+
+  <script>
+    window.DATA_CONFIG = {
+      type: 'estatisticas',
+      file: 'registros.dat',
+      target: '#conteudo'
+    };
+  </script>
+</head>
+
+<body>
+
+<div id="navbar"></div>
+
+<div class="container mt-4">
+
+  <h2 class="mb-4 text-center">
+    <i class="bi bi-graph-up"></i> Estatísticas Analíticas
+  </h2>
+
+  <!-- RESUMO -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="stat-card bg-hoje">
+        <h6>📅 Hoje</h6>
+        <div id="stat-hoje"></div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="stat-card bg-semana">
+        <h6>📆 Semana</h6>
+        <div id="stat-semana"></div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="stat-card bg-mes">
+        <h6>🗓 Mês</h6>
+        <div id="stat-mes"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PICO DE CONSUMO -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <i class="bi bi-exclamation-triangle"></i> Picos de Consumo
+    </div>
+    <div class="card-body" id="picos-consumo">
+      Carregando análise...
+    </div>
+  </div>
+
+  <!-- FAIXAS HORÁRIAS -->
+  <div class="card">
+    <div class="card-header">
+      <i class="bi bi-clock-history"></i> Consumo por Faixa Horária
+    </div>
+    <div class="card-body table-responsive">
+      <table class="table table-striped align-middle">
+        <thead>
+          <tr>
+            <th>Faixa</th>
+            <th>Mínimo</th>
+            <th>Máximo</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="faixas-horarias"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script src="/js/bootstrap.min.js"></script>
+<script src="/js/navbar.js"></script>
+<script src="/js/auth-guard.js"></script>
+<script src="/js/data-loader.js"></script>
+
+<script>
+  protegerPagina(['admin','sindico']);
+</script>
+
+</body>
+</html>
