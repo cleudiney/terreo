@@ -1,36 +1,26 @@
-/* =====================================================
-   DASHBOARD.JS – SPA WEBSOCKET
-   ===================================================== */
+/* ================= DASHBOARD.JS ================= */
 
-let ws;
+let timerStatus = null;
 
 /* ================= INIT ================= */
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('🚀 Dashboard iniciado');
-  iniciarWebSocket();
+  console.log('🚀 Dashboard iniciado (HTTP)');
+  atualizar();
+  timerStatus = setInterval(atualizar, 3000);
 });
 
-/* ================= WEBSOCKET ================= */
-function iniciarWebSocket() {
-  ws = new WebSocket(`ws://${location.host}/ws`);
+/* ================= FETCH STATUS ================= */
+async function atualizar() {
+  try {
+    const resp = await fetch('/api/status');
+    if (!resp.ok) return;
 
-  ws.onopen = () => {
-    console.log('🟢 WebSocket conectado');
-  };
-
-  ws.onmessage = (evt) => {
-    const data = JSON.parse(evt.data);
+    const data = await resp.json();
     atualizarDashboard(data);
-  };
 
-  ws.onerror = (e) => {
-    console.error('❌ WS erro', e);
-  };
-
-  ws.onclose = () => {
-    console.warn('🔴 WS desconectado, reconectando...');
-    setTimeout(iniciarWebSocket, 3000);
-  };
+  } catch (e) {
+    console.warn('❌ Erro status', e);
+  }
 }
 
 /* ================= DASHBOARD ================= */
@@ -47,7 +37,7 @@ function atualizarDashboard(data) {
   setText('nivelPercentual', `${c.nivelPercentual.toFixed(1)}%`);
   setText('nivelAltura', `${c.nivelCm.toFixed(1)} cm`);
 
-  // Bombas (SOMENTE ESTADO)
+  // Bombas
   setText(
     'statusBomba',
     c.bombaA || c.bombaB ? 'LIGADA' : 'DESLIGADA'
@@ -59,13 +49,13 @@ function atualizarDashboard(data) {
     c.vazaoEntrada ? 'COM VAZÃO' : 'SEM VAZÃO'
   );
 
-  // Alerta visual
   verificarAlerta(c);
 }
 
 /* ================= ALERTA ================= */
 function verificarAlerta(caixa) {
   const faixa = document.getElementById('alertaVazao');
+  if (!faixa) return;
 
   if (caixa.nivelPercentual <= 50 && caixa.vazaoEntrada === false) {
     faixa.classList.remove('oculto');
@@ -79,3 +69,4 @@ function setText(id, txt) {
   const el = document.getElementById(id);
   if (el) el.innerText = txt;
 }
+/* ================= END DASHBOARD.JS ================= */

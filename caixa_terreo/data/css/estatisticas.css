@@ -1,0 +1,29 @@
+/* estatisticas.css */
+body {
+  background: #eef1f4;
+}
+
+/* cards resumo */
+
+.stat-card {
+  border-radius: 14px;
+  padding: 20px;
+  color: white;
+  box-shadow: 0 4px 10px rgba(0,0,0,.15);
+}
+
+.bg-hoje {
+  background: linear-gradient(135deg,#1976d2,#0d47a1);
+}
+
+.bg-semana {
+  background: linear-gradient(135deg,#388e3c,#1b5e20);
+}
+
+.bg-mes {
+  background: linear-gradient(135deg,#f57c00,#e65100);
+}
+
+.badge-consumo {
+  font-size: .9rem;
+}

@@ -85,6 +85,7 @@ void inicializarWebServer() {
   // ===================================================
   server.begin();
   webserverInicializado = true;
+  server.on("/api/status", HTTP_GET, apiStatus);
 
   Serial.println("✅ WebServer iniciado com sucesso");
 }

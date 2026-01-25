@@ -2,45 +2,19 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+
   <title>Pontos do Dia - Caixa d'Água</title>
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Bootstrap LOCAL -->
+  <!-- CSS -->
   <link rel="stylesheet" href="/css/bootstrap.min.css">
   <link rel="stylesheet" href="/css/bootstrap-icons.css">
-
-  <!-- CSS global -->
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/navbar.css">
+  <link rel="stylesheet" href="/css/pontos.css">
 
-  <style>
-    body {
-      background: #f8f9fa;
-    }
-    .card {
-      border-radius: 12px;
-      box-shadow: 0 4px 8px rgba(0,0,0,.1);
-      border: none;
-      margin-bottom: 20px;
-    }
-    .card-header {
-      background: linear-gradient(135deg,#1976d2,#1565c0);
-      color: white;
-      font-weight: 600;
-    }
-    .table th {
-      background: #1976d2;
-      color: white;
-      white-space: nowrap;
-    }
-    .loading {
-      text-align: center;
-      padding: 30px;
-      color: #6c757d;
-    }
-  </style>
-
-  <!-- CONFIGURAÇÃO DO DATA LOADER -->
+  <!-- DATA CONFIG -->
   <script>
     window.DATA_CONFIG = {
       type: 'pontos',
@@ -50,7 +24,7 @@
   </script>
 </head>
 
-<body>
+<body class="bg-light fade-in">
 
 <!-- NAVBAR -->
 <div id="navbar"></div>
@@ -75,20 +49,17 @@
       <i class="bi bi-graph-up"></i> Evolução do Nível
     </div>
     <div class="card-body">
-      <canvas id="graficoNivel" height="100"></canvas>
+      <canvas id="graficoNivel" height="110"></canvas>
     </div>
   </div>
 
 </main>
 
-<!-- JS LOCAL -->
+<!-- JS base -->
 <script src="/js/jquery-3.7.1.min.js"></script>
 <script src="/js/popper.min.js"></script>
 <script src="/js/bootstrap.min.js"></script>
 <script src="/js/chart.min.js"></script>
-
-<!-- Navbar -->
-<script src="/js/navbar.js"></script>
 
 <!-- Segurança -->
 <script src="/js/auth-guard.js"></script>
@@ -96,8 +67,92 @@
   protegerPagina(['admin','sindico','operador']);
 </script>
 
-<!-- DATA LOADER -->
+<!-- Navbar -->
+<script src="/js/navbar.js"></script>
+
+<!-- Loader -->
 <script src="/js/data-loader.js"></script>
+
+<!-- Script da página -->
+<script>
+let grafico = null;
+
+dataLoader.afterLoad = function(pontos) {
+
+  if (!Array.isArray(pontos) || pontos.length === 0) {
+    return;
+  }
+
+  // ========= tabela =========
+  const container = document.getElementById('conteudo');
+
+  let html = `
+    <div class="table-responsive">
+      <table class="table table-striped table-sm align-middle">
+        <thead>
+          <tr>
+            <th>Hora</th>
+            <th>Nível (%)</th>
+            <th>Vazão</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  pontos.forEach(p => {
+    html += `
+      <tr>
+        <td>${p.hora || ''}</td>
+        <td>${p.nivel ?? ''}</td>
+        <td>${p.vazao ?? ''}</td>
+        <td>${p.status || ''}</td>
+      </tr>
+    `;
+  });
+
+  html += `</tbody></table></div>`;
+  container.innerHTML = html;
+
+  // ========= gráfico =========
+  const labels = pontos.map(p => p.hora);
+  const niveis = pontos.map(p => p.nivel);
+
+  const ctx = document.getElementById('graficoNivel');
+
+  if (grafico) {
+    grafico.destroy();
+  }
+
+  grafico = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Nível da Caixa (%)',
+        data: niveis,
+        tension: 0.3,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: true }
+      },
+      scales: {
+        y: {
+          min: 0,
+          max: 100,
+          ticks: {
+            callback: v => v + '%'
+          }
+        }
+      }
+    }
+  });
+};
+</script>
 
 </body>
 </html>

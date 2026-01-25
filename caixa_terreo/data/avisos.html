@@ -1,152 +1,152 @@
-<!--avisos.html -->
-
+<!-- avisos.html -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+
   <title>Avisos do Sistema</title>
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Bootstrap local -->
+  <!-- CSS -->
   <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/navbar.css">
-  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/avisos.css">
 
-  <style>
-    body { background-color: #f8f9fa; }
-
-    .aviso {
-      border-left: 6px solid #6c757d;
-      padding: 15px;
-      margin-bottom: 12px;
-      background: #fff;
-      border-radius: 6px;
-    }
-
-    .aviso.critico   { border-color: #dc3545; background: #f8d7da; }
-    .aviso.urgente   { border-color: #ffc107; background: #fff3cd; }
-    .aviso.resolvido { border-color: #198754; background: #d1e7dd; }
-    .aviso.controle  { border-color: #0dcaf0; background: #cff4fc; }
-    .aviso.evento    { border-color: #6c757d; }
-
-    .aviso small {
-      color: #555;
-    }
-
-    .badge {
-      font-size: 0.8rem;
-    }
-  </style>
+  <!-- DATA CONFIG -->
+  <script>
+    window.DATA_CONFIG = {
+      type: 'avisos',
+      file: 'avisos.dat',
+      target: '#listaAvisos'
+    };
+  </script>
 </head>
 
-<body>
+<body class="bg-light fade-in">
 
-<!-- NAVBAR -->
-<div id="navbar"></div>
+  <!-- NAVBAR -->
+  <div id="navbar"></div>
 
-<main class="container mt-4">
+  <main class="container mt-4">
 
-  <h2 class="mb-4 text-center">
-    ⚠️ Avisos e Eventos do Sistema
-  </h2>
+    <h2 class="mb-4 text-center">
+      ⚠️ Avisos e Eventos do Sistema
+    </h2>
 
-  <!-- Filtros simples -->
-  <div class="card mb-4">
-    <div class="card-body row g-3">
-      <div class="col-md-4">
-        <label class="form-label">Tipo</label>
-        <select id="filtroTipo" class="form-select">
-          <option value="">Todos</option>
-          <option value="critico">Crítico</option>
-          <option value="urgente">Urgente</option>
-          <option value="resolvido">Resolvido</option>
-          <option value="controle">Controle</option>
-          <option value="evento">Evento</option>
-        </select>
-      </div>
+    <!-- Filtros -->
+    <div class="card mb-4">
+      <div class="card-body row g-3">
 
-      <div class="col-md-6">
-        <label class="form-label">Buscar texto</label>
-        <input type="text" id="filtroTexto" class="form-control" placeholder="Ex: bomba, vazão, nível">
-      </div>
+        <div class="col-md-4">
+          <label class="form-label">Tipo</label>
+          <select id="filtroTipo" class="form-select">
+            <option value="">Todos</option>
+            <option value="critico">Crítico</option>
+            <option value="urgente">Urgente</option>
+            <option value="resolvido">Resolvido</option>
+            <option value="controle">Controle</option>
+            <option value="evento">Evento</option>
+          </select>
+        </div>
 
-      <div class="col-md-2 d-flex align-items-end">
-        <button class="btn btn-primary w-100" onclick="aplicarFiltros()">Filtrar</button>
+        <div class="col-md-6">
+          <label class="form-label">Buscar texto</label>
+          <input
+            type="text"
+            id="filtroTexto"
+            class="form-control"
+            placeholder="Ex: bomba, vazão, nível">
+        </div>
+
+        <div class="col-md-2 d-flex align-items-end">
+          <button class="btn btn-primary w-100" onclick="aplicarFiltros()">
+            Filtrar
+          </button>
+        </div>
+
       </div>
     </div>
-  </div>
 
-  <!-- Lista -->
-  <div id="listaAvisos">
-    <div class="text-center text-muted">
-      Carregando avisos...
+    <!-- Lista -->
+    <div id="listaAvisos">
+      <div class="text-center text-muted">
+        Carregando avisos...
+      </div>
     </div>
-  </div>
 
-</main>
+  </main>
 
-<!-- JS -->
-<script src="/js/jquery-3.7.1.min.js"></script>
-<script src="/js/bootstrap.min.js"></script>
-<script src="/js/navbar.js"></script>
-<script src="/js/data-loader.js"></script>
+  <!-- JS -->
+  <script src="/js/jquery-3.7.1.min.js"></script>
+  <script src="/js/bootstrap.min.js"></script>
 
-<script>
-  let avisos = [];
+  <!-- Segurança -->
+  <script src="/js/auth-guard.js"></script>
+  <script>
+    protegerPagina(['admin','sindico','zelador']);
+  </script>
 
-  function carregarAvisos() {
-    dataLoader.load('avisos', function(dados) {
+  <!-- Navbar -->
+  <script src="/js/navbar.js"></script>
+
+  <!-- Loader -->
+  <script src="/js/data-loader.js"></script>
+
+  <!-- Filtros -->
+  <script>
+    let avisos = [];
+
+    dataLoader.afterLoad = function(dados) {
       avisos = dados || [];
       renderizarAvisos(avisos);
-    });
-  }
+    };
 
-  function renderizarAvisos(lista) {
-    const container = document.getElementById('listaAvisos');
-    container.innerHTML = '';
+    function renderizarAvisos(lista) {
+      const container = document.getElementById('listaAvisos');
+      container.innerHTML = '';
 
-    if (!lista.length) {
-      container.innerHTML = `
-        <div class="alert alert-info text-center">
-          Nenhum aviso registrado.
-        </div>`;
-      return;
+      if (!lista.length) {
+        container.innerHTML =
+          '<div class="alert alert-info text-center">Nenhum aviso registrado.</div>';
+        return;
+      }
+
+      lista.forEach(a => {
+        const div = document.createElement('div');
+        div.className = `aviso ${a.tipo || 'evento'}`;
+
+        div.innerHTML = `
+          <div class="d-flex justify-content-between">
+            <strong>${a.mensagem}</strong>
+            <span class="badge bg-secondary">
+              ${(a.tipo || 'evento').toUpperCase()}
+            </span>
+          </div>
+          <small>
+            🕒 ${a.data}
+            ${a.usuario ? ' | 👤 ' + a.usuario : ''}
+          </small>
+        `;
+
+        container.appendChild(div);
+      });
     }
 
-    lista.forEach(a => {
-      const div = document.createElement('div');
-      div.className = `aviso ${a.tipo || 'evento'}`;
+    function aplicarFiltros() {
+      const tipo = document.getElementById('filtroTipo').value;
+      const texto = document.getElementById('filtroTexto').value.toLowerCase();
 
-      div.innerHTML = `
-        <div class="d-flex justify-content-between">
-          <strong>${a.mensagem}</strong>
-          <span class="badge bg-secondary">${(a.tipo || 'evento').toUpperCase()}</span>
-        </div>
-        <small>
-          🕒 ${a.data}
-          ${a.usuario ? ' | 👤 ' + a.usuario : ''}
-        </small>
-      `;
+      const filtrados = avisos.filter(a => {
+        if (tipo && a.tipo !== tipo) return false;
+        if (texto && !a.mensagem.toLowerCase().includes(texto)) return false;
+        return true;
+      });
 
-      container.appendChild(div);
-    });
-  }
-
-  function aplicarFiltros() {
-    const tipo = document.getElementById('filtroTipo').value;
-    const texto = document.getElementById('filtroTexto').value.toLowerCase();
-
-    const filtrados = avisos.filter(a => {
-      if (tipo && a.tipo !== tipo) return false;
-      if (texto && !a.mensagem.toLowerCase().includes(texto)) return false;
-      return true;
-    });
-
-    renderizarAvisos(filtrados);
-  }
-
-  document.addEventListener('DOMContentLoaded', carregarAvisos);
-</script>
+      renderizarAvisos(filtrados);
+    }
+  </script>
 
 </body>
 </html>

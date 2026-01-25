@@ -304,7 +304,13 @@ void processarLogin() {
     "\"token\":\"local\""
     "}";
 
-  server.send(200, "application/json", json);
+String resposta = "{";
+resposta += "\"success\":true,";
+resposta += "\"data\":";
+resposta += json;   // ou listaUsuarios
+resposta += "}";
+
+server.send(200, "application/json", resposta);
 }
 
 // =====================================================

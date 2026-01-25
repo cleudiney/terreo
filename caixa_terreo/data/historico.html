@@ -1,35 +1,18 @@
+<!-- historico.html-->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
+
   <title>Histórico - Caixa d'Água</title>
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Bootstrap LOCAL -->
+  <!-- CSS -->
   <link rel="stylesheet" href="/css/bootstrap.min.css">
-
-  <!-- CSS global -->
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/navbar.css">
-
-  <style>
-    body {
-      background: #eef1f4;
-    }
-
-    .stats-card {
-      background: linear-gradient(135deg, #1976d2, #1565c0);
-      color: white;
-      border-radius: 12px;
-      padding: 15px;
-      text-align: center;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    }
-
-    table th {
-      white-space: nowrap;
-    }
-  </style>
+  <link rel="stylesheet" href="/css/historico.css">
 
   <!-- CONFIGURAÇÃO DO DATA LOADER -->
   <script>
@@ -41,47 +24,46 @@
   </script>
 </head>
 
-<body>
+<body class="bg-light fade-in">
 
-<!-- NAVBAR -->
-<div id="navbar"></div>
+  <!-- NAVBAR -->
+  <div id="navbar"></div>
 
-<main class="container mt-4">
+  <main class="container mt-4">
 
-  <h2 class="mb-4 text-center">
-    📅 Histórico Diário Consolidado
-  </h2>
+    <h2 class="mb-4 text-center">
+      📅 Histórico Diário Consolidado
+    </h2>
 
-  <!-- Estatísticas -->
-  <div class="row mb-4" id="stats">
-    <!-- preenchido pelo data-loader.js -->
-  </div>
-
-  <!-- Conteúdo -->
-  <div id="conteudo">
-    <div class="text-center text-muted py-4">
-      Carregando histórico...
+    <!-- Estatísticas -->
+    <div class="row mb-4" id="stats">
+      <!-- preenchido pelo data-loader.js -->
     </div>
-  </div>
 
-</main>
+    <!-- Conteúdo -->
+    <div id="conteudo">
+      <div class="text-center text-muted py-4">
+        Carregando histórico...
+      </div>
+    </div>
 
-<!-- JS LOCAL -->
-<script src="/js/jquery-3.7.1.min.js"></script>
-<script src="/js/popper.min.js"></script>
-<script src="/js/bootstrap.min.js"></script>
+  </main>
 
-<!-- Navbar -->
-<script src="/js/navbar.js"></script>
+  <!-- JS -->
+  <script src="/js/jquery-3.7.1.min.js"></script>
+  <script src="/js/bootstrap.min.js"></script>
 
-<!-- Segurança -->
-<script src="/js/auth-guard.js"></script>
-<script>
-  protegerPagina(['admin', 'sindico', 'operador']);
-</script>
+  <!-- Segurança -->
+  <script src="/js/auth-guard.js"></script>
+  <script>
+    protegerPagina(['admin','sindico','zelador']);
+  </script>
 
-<!-- DATA LOADER -->
-<script src="/js/data-loader.js"></script>
+  <!-- Navbar -->
+  <script src="/js/navbar.js"></script>
+
+  <!-- Loader -->
+  <script src="/js/data-loader.js"></script>
 
 </body>
 </html>
