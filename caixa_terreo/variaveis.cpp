@@ -15,7 +15,7 @@
  */
 
 // =====================================================
-// ===================== CREDENCIAIS ====================
+// ===================== CREDENCIAIS ===================
 // =====================================================
 
 // --------------------- WI-FI --------------------------
@@ -41,7 +41,7 @@ String DUCKDNS_TOKEN  = "00a4f00e-4f6a-43f1-8c50-ac0aaa3af2de";
 // --------------------- CALLMEBOT ----------------------
 const String CALLMEBOT_TEL1     = "553199169087";
 const String CALLMEBOT_APIKEY1  = "6036650";
-const String CALLMEBOT_TEL2     = "5553191853572";
+const String CALLMEBOT_TEL2     = "553191853572";
 const String CALLMEBOT_APIKEY2  = "9472853";
 const String CALLMEBOT_TEL3     = "553192590362";
 const String CALLMEBOT_APIKEY3  = "8786448";
