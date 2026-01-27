@@ -55,7 +55,8 @@ void setup() {
   // 11. Inicializar estatísticas
   Serial.println("📊 Inicializando estatísticas...");
   inicializarEstatisticas();
-
+//12. DuckDns
+iniciarDuckDNS();
   Serial.println("\n✅ Sistema inicializado com sucesso!");
   Serial.print("📅 Data/hora atual: ");
   Serial.println(getDataHoraAtual());
@@ -110,7 +111,9 @@ void loop() {
   // 7. Estatísticas
   loopEstatisticas();
   // 8. Webserver
-  loopWebServer();      
+  loopWebServer();   
+  // 9. DuckDns
+  verificarDuckDNS();   
 
   delay(10);
 }

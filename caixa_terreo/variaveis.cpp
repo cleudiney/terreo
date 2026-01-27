@@ -32,8 +32,11 @@ const char* DDNS_USER = "qc2wtrf";
 const char* DDNS_PASS = "wrtpK3LSpuWm";
 
 // --------------------- DUCKDNS ------------------------
-const char* DUCKDNS_DOMAIN = "edificioaquarios";
+/*const char* DUCKDNS_DOMAIN = "edificioaquarios";
 const char* DUCKDNS_TOKEN  = "00a4f00e-4f6a-43f1-8c50-ac0aaa3af2de";
+*/
+String DUCKDNS_DOMAIN = "edificioaquarios";
+String DUCKDNS_TOKEN  = "00a4f00e-4f6a-43f1-8c50-ac0aaa3af2de";
 
 // --------------------- CALLMEBOT ----------------------
 const String CALLMEBOT_TEL1     = "553199169087";
@@ -54,6 +57,8 @@ WebServer server(WEB_SERVER_PORT);
 // ===================== ESTADO DA CAIXA ================
 // =====================================================
 EstadoCaixa estadoAtual;
+unsigned long tUltimaMensagemVazamento = 0;
+
 
 // =====================================================
 // ===================== CONTROLE DE BOMBAS ==============

@@ -4,28 +4,49 @@
 // =====================================================
 // REGISTRAR AVISO
 // =====================================================
-void registrarAviso(String tipo, String mensagem, String usuario = ""){
+void registrarAviso(String tipo, String mensagem, String usuario = "") {
+
+  // ===============================
+  // Usuário automático
+  // ===============================
   if (usuario.isEmpty() && autenticado) {
     usuario = usuarioLogado;
   }
 
+  // ===============================
+  // Data e hora
+  // ===============================
   String dataHora = getDataHoraAtual();
 
+  // ===============================
+  // Montagem da linha
+  // ===============================
   String linha = dataHora + ";" + tipo + ";" + mensagem;
+
   if (!usuario.isEmpty()) {
     linha += ";" + usuario;
   }
+
   linha += "\n";
 
+  // ===============================
+  // Grava no arquivo
+  // ===============================
   File f = SPIFFS.open("/avisos.dat", FILE_APPEND);
   if (!f) {
-    Serial.println("❌ Erro ao abrir avisos.dat para escrita");
+    Serial.println("❌ Erro ao abrir avisos.dat");
     return;
   }
 
   f.print(linha);
   f.close();
+
+  // ===============================
+  // 🔔 DISPARO DE NOTIFICAÇÃO
+  // ===============================
+  processarNotificacao(tipo, mensagem);
 }
+
 
 // =====================================================
 // CONTADOR DE AVISOS

@@ -48,6 +48,22 @@ extern const char* AP_PASSWORD;
 #define NIVEL_ALERTA           40.0
 #define NIVEL_NORMAL           60.0
 
+//=================CALLMEBOT==================
+extern const String CALLMEBOT_TEL1;
+extern const String CALLMEBOT_APIKEY1;
+
+extern const String CALLMEBOT_TEL2;
+extern const String CALLMEBOT_APIKEY2;
+
+extern const String CALLMEBOT_TEL3;
+extern const String CALLMEBOT_APIKEY3;
+
+// ======================
+// DUCKDNS
+// ======================
+extern String DUCKDNS_DOMAIN;
+extern String DUCKDNS_TOKEN;
+
 // =====================================================
 // ===================== ENUMS ==========================
 // =====================================================
@@ -99,6 +115,28 @@ extern float vazaoTotalDiaria;
 extern WiFiUDP ntpUDP;
 extern NTPClient timeClient;
 
+//=====================CONTROLE_CAIXA_AGUA ===============
+// =====================================
+// PARÂMETROS DA CAIXA
+// =====================================
+#define ALTURA_UTIL_CM 180.0      // ajuste depois
+#define VOLUME_TOTAL_L 20000.0    // ajuste depois
+
+#define VAZAO_VAZAMENTO_CRITICO 60.0   // L/min
+#define NIVEL_DESLIGA_EMERGENCIA_CM 10.0
+
+
+// =================================
+// VAZÃO CALCULADA e CAIXA DE AGUA
+// =================================
+extern float vazaoCalculada;
+extern float ultimoNivelVazao;
+extern unsigned long ultimoTempoVazao;
+
+extern unsigned long tUltimaMensagemVazamento;
+extern EstadoCaixa estadoAtual;
+
+
 // =====================================================
 // ===================== WEB SERVER / SESSÃO =============
 // =====================================================
@@ -144,8 +182,12 @@ extern unsigned long ultimaAtividadeSessao;
 // =====================================================
 void inicializarWebServer();
 void loopWebServer();
+float calcularNivelAgua();
+float calcularVolume();
+String getEstadoString();
+void registrarAviso(String tipo, String mensagem, String usuario);
 
-//====================== SPIFFS
+//====================== SPIFFS =====================
 void inicializarSPIFFS();
 bool verificarArquivosEssenciais();
 
@@ -173,5 +215,10 @@ bool exigirNivel(NivelAcesso minimo);
 // =====================================================
 void processarLogin();
 void processarLogout();
+// =======================
+// SERIAL MONITOR GLOBAL
+// =======================
+void serialMonitor(const String& texto);
+
 
 #endif // VARIAVEIS_H
