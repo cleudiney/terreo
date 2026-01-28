@@ -3,6 +3,13 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 
+// montar mensagem padrão
+String getCabecalhoWhatsApp() {
+  String txt = String(SISTEMA_NOME) + "\n";
+  txt += "----------------------------------\n";
+  return txt;
+}
+
 // Função auxiliar para obter hora formatada
 String getHoraCallMeBot() {
   if (hasInternet && WiFi.status() == WL_CONNECTED) {

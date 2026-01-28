@@ -48,18 +48,23 @@ void setup() {
   Serial.println("🔧 Inicializando controle de bombas...");
   inicializarControleBombas();
 
-  // 10. Inicializar sistema de avisos
+  // 10. Inicializar sistema de avisos ***
   Serial.println("📢 Inicializando sistema de avisos...");
   inicializarSistemaAvisos();
-
   // 11. Inicializar estatísticas
   Serial.println("📊 Inicializando estatísticas...");
   inicializarEstatisticas();
-//12. DuckDns
-iniciarDuckDNS();
+  //12. DuckDns
+  iniciarDuckDNS();
   Serial.println("\n✅ Sistema inicializado com sucesso!");
   Serial.print("📅 Data/hora atual: ");
   Serial.println(getDataHoraAtual());
+  
+      // primeira leitura real
+         lerTodosSensores();
+
+     // envia relatório completo de inicialização
+         enviarMensagemBoot();
 
   if (modoAP) {
     Serial.print("📶 Modo AP - IP: ");
@@ -77,43 +82,43 @@ iniciarDuckDNS();
 }
 
 // ===================== LOOP =====================
-void loop() {
-  // 1. Manter conexão WiFi
-  verificarConexao();
-
-  // 2. Ler sensores (a cada 2 segundos)
-  static unsigned long ultimaLeituraSensores = 0;
-  if (millis() - ultimaLeituraSensores > 2000) {
-    lerTodosSensores();
-    ultimaLeituraSensores = millis();
-    
-    // Log do estado atual
-    Serial.printf("[%s] 📊 Nível: %.1f%% | Vazão: %s | Bomba A: %s | Bomba B: %s\n",
+        void loop() {
+        // 1. Manter conexão WiFi
+        verificarConexao();
+        
+        // 2. Ler sensores (a cada 2 segundos)
+        static unsigned long ultimaLeituraSensores = 0;
+        if (millis() - ultimaLeituraSensores > 2000) {
+        lerTodosSensores();
+        ultimaLeituraSensores = millis();
+        
+        // Log do estado atual
+        Serial.printf("[%s] 📊 Nível: %.1f%% | Vazão: %s | Bomba A: %s | Bomba B: %s\n",
                   getHoraAtual().c_str(),
                   estadoAtual.nivelPercentual,
                   estadoAtual.vazaoEntrada ? "SIM" : "NÃO",
                   estadoAtual.bombaAAtiva ? "LIGADA" : "DESLIGADA",
                   estadoAtual.bombaBAtiva ? "LIGADA" : "DESLIGADA");
-  }
-
-  // 3. Atualizar LEDs de status
-  atualizarLedsStatus();
-
-  // 4. Verificar interrupções manuais
-  verificarInterrupcoesManuais();
-
-  // 5. Controle automático de bombas
-  controleAutomaticoBombas();
-
-  // 6. Verificação de segurança das bombas
-  verificarSegurancaBombas();
-
-  // 7. Estatísticas
-  loopEstatisticas();
-  // 8. Webserver
-  loopWebServer();   
-  // 9. DuckDns
-  verificarDuckDNS();   
+        }
+        
+        // 3. Atualizar LEDs de status
+        atualizarLedsStatus();
+        
+        // 4. Verificar interrupções manuais
+        verificarInterrupcoesManuais();
+        
+        // 5. Controle automático de bombas
+        controleAutomaticoBombas();
+        
+        // 6. Verificação de segurança das bombas
+        verificarSegurancaBombas();
+        
+        // 7. Estatísticas
+        loopEstatisticas();
+        // 8. Webserver
+        loopWebServer();   
+        // 9. DuckDns
+        verificarDuckDNS();   
 
   delay(10);
 }

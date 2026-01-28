@@ -6,7 +6,7 @@
 #include <SPIFFS.h>
 #include <WiFiUdp.h>
 #include <NTPClient.h>
-#include <WebServer.h>   // ✅ TEM QUE FICAR AQUI
+#include <WebServer.h>
 
 // =====================================================
 // ===================== DEFINIÇÕES BÁSICAS =============
@@ -15,6 +15,10 @@
 #define ARQ_USUARIOS   "/dados/usuarios.dat"
 #define ARQ_AVISOS     "/dados/avisos.dat"
 #define ARQ_REGISTROS  "/dados/registros.dat"
+// =====================================================
+// =================== IDENTIDADE DO SISTEMA (WHATSAPP / LOGS / WEB)
+// =====================================================
+#define SISTEMA_NOME "💧 Monitor Caixa d'Água - TERREO / COPASA - Edifício Aquários"
 
 // =====================================================
 // ===================== CREDENCIAIS ====================
@@ -44,23 +48,23 @@ extern const char* AP_PASSWORD;
 #define ALTURA_CAIXA_CM        200.0
 #define FATOR_CALIBRACAO_VAZAO 0.0025
 
-#define NIVEL_CRITICO          20.0
-#define NIVEL_ALERTA           40.0
-#define NIVEL_NORMAL           60.0
+#define NIVEL_CRITICO  20.0
+#define NIVEL_ALERTA   40.0
+#define NIVEL_NORMAL   60.0
 
-//=================CALLMEBOT==================
+// =====================================================
+// ===================== CALLMEBOT ======================
+// =====================================================
 extern const String CALLMEBOT_TEL1;
 extern const String CALLMEBOT_APIKEY1;
-
 extern const String CALLMEBOT_TEL2;
 extern const String CALLMEBOT_APIKEY2;
-
 extern const String CALLMEBOT_TEL3;
 extern const String CALLMEBOT_APIKEY3;
 
-// ======================
-// DUCKDNS
-// ======================
+// =====================================================
+// ===================== DUCKDNS ========================
+// =====================================================
 extern String DUCKDNS_DOMAIN;
 extern String DUCKDNS_TOKEN;
 
@@ -75,7 +79,6 @@ enum EstadoCaixaEnum {
   CAIXA_ESTAVEL
 };
 
-// ⚠️ MANTIDO, MAS AINDA NÃO USADO PELO SISTEMA ATUAL
 enum NivelAcesso {
   ACESSO_NENHUM = 0,
   ACESSO_MORADOR,
@@ -89,13 +92,13 @@ enum NivelAcesso {
 // ===================== ESTRUTURAS =====================
 // =====================================================
 struct EstadoCaixa {
-  float nivelPercentual = 100.0;
-  float nivelCm = 0.0;
-  bool vazaoEntrada = false;
-  bool bombaAAtiva = false;
-  bool bombaBAtiva = false;
-  EstadoCaixaEnum estado = CAIXA_ESTAVEL;
-  String ultimaAtualizacao = "";
+  float nivelPercentual;
+  float nivelCm;
+  bool vazaoEntrada;
+  bool bombaAAtiva;
+  bool bombaBAtiva;
+  EstadoCaixaEnum estado;
+  String ultimaAtualizacao;
 };
 
 // =====================================================
@@ -103,7 +106,6 @@ struct EstadoCaixa {
 // =====================================================
 extern bool hasInternet;
 extern bool modoAP;
-
 
 extern EstadoCaixa estadoAtual;
 
@@ -115,61 +117,36 @@ extern float vazaoTotalDiaria;
 extern WiFiUDP ntpUDP;
 extern NTPClient timeClient;
 
-//=====================CONTROLE_CAIXA_AGUA ===============
-// =====================================
-// PARÂMETROS DA CAIXA
-// =====================================
-#define ALTURA_UTIL_CM 180.0      // ajuste depois
-#define VOLUME_TOTAL_L 20000.0    // ajuste depois
+// =====================================================
+// ============== CONTROLE CAIXA D’ÁGUA =================
+// =====================================================
+#define ALTURA_UTIL_CM 180.0
+#define VOLUME_TOTAL_L 20000.0
 
-#define VAZAO_VAZAMENTO_CRITICO 60.0   // L/min
+#define VAZAO_VAZAMENTO_CRITICO 60.0
 #define NIVEL_DESLIGA_EMERGENCIA_CM 10.0
 
-
-// =================================
-// VAZÃO CALCULADA e CAIXA DE AGUA
-// =================================
 extern float vazaoCalculada;
 extern float ultimoNivelVazao;
 extern unsigned long ultimoTempoVazao;
 
 extern unsigned long tUltimaMensagemVazamento;
-extern EstadoCaixa estadoAtual;
-
 
 // =====================================================
-// ===================== WEB SERVER / SESSÃO =============
+// ===================== WEB SERVER =====================
 // =====================================================
-// =====================================================
-// TEMPO DE SESSÃO WEB
-// =====================================================
-#define TEMPO_SESSAO_MS (15UL * 60UL * 1000UL)  
-// 15 minutos
-// compatibilidade interna (alias)
+#define TEMPO_SESSAO_MS (15UL * 60UL * 1000UL)
 #define TEMPO_TIMEOUT_SESSAO TEMPO_SESSAO_MS
-// Porta do servidor 3000
 #define WEB_SERVER_PORT 3000
-extern WebServer server;
-
-extern bool autenticado;
-extern bool sessaoAtiva;
-extern String usuarioLogado;
-
-// ⚠️ MANTIDO COMO STRING PARA NÃO QUEBRAR usuarios.ino
-extern String nivelAcessoLogado;
-
-extern unsigned long ultimaAtividadeSessao;
 
 extern WebServer server;
 
 extern bool autenticado;
 extern bool sessaoAtiva;
-extern String usuarioLogado;
 
-// ⚠️ MANTIDO COMO STRING PARA NÃO QUEBRAR usuarios.ino
+extern String usuarioLogado;
 extern String nivelAcessoLogado;
 
-// ✅ NOVO — enum para uso futuro (ainda NÃO usado)
 extern NivelAcesso nivelAcessoLogadoEnum;
 
 extern unsigned long ultimaAtividadeSessao;
@@ -177,48 +154,35 @@ extern unsigned long ultimaAtividadeSessao;
 // =====================================================
 // ===================== PROTÓTIPOS =====================
 // =====================================================
-// =====================================================
-// WEBSERVER
-// =====================================================
 void inicializarWebServer();
 void loopWebServer();
+
 float calcularNivelAgua();
 float calcularVolume();
 String getEstadoString();
+
 void registrarAviso(String tipo, String mensagem, String usuario);
 
-//====================== SPIFFS =====================
+// ======================= SPIFFS =======================
 void inicializarSPIFFS();
 bool verificarArquivosEssenciais();
 
-// Usuários
+// ======================= USUÁRIOS =====================
 void inicializarBancoUsuarios();
 bool autenticarUsuario(String usuario, String senha);
 void listarUsuariosSerial();
 
-// API / Web
+// ======================= API ==========================
 void processarLogin();
 void processarLogout();
 void apiListarUsuarios();
 void apiCriarUsuario();
 void apiExcluirUsuario();
 
-// =====================================================
-// ===================== SEGURANÇA WEB ==================
-// =====================================================
-
-// Verifica autenticação + nível mínimo de acesso
+// ======================= SEGURANÇA ====================
 bool exigirNivel(NivelAcesso minimo);
 
-// =====================================================
-// ===================== WEB AUTH =======================
-// =====================================================
-void processarLogin();
-void processarLogout();
-// =======================
-// SERIAL MONITOR GLOBAL
-// =======================
+// ======================= SERIAL =======================
 void serialMonitor(const String& texto);
 
-
-#endif // VARIAVEIS_H
+#endif

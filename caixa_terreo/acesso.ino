@@ -1,6 +1,5 @@
 // =====================================================
 // acesso.ino
-// Autor: Oficina de Robótica - IBHF
 // Data: 2026-01-16
 // Motivo:
 //  - Converter perfil STRING para enum NivelAcesso

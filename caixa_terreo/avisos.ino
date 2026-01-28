@@ -116,7 +116,7 @@ void inicializarSistemaAvisos() {
     f.close();
   }
 
-  registrarAviso("sistema", "Sistema inicializado / reboot", "sistema");
+  //registrarAviso("sistema", "Sistema inicializado / reboot", "sistema");
 
   int total = contarAvisos();
   Serial.printf("✅ Sistema de avisos OK (%d avisos registrados)\n", total);
