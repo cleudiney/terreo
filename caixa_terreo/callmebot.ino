@@ -1,198 +1,199 @@
-// CallMeBot.ino
+// =====================================================
+// CallMeBot.ino — PADRÃO OFICIAL DO SISTEMA
+// =====================================================
 #include "variaveis.h"
 #include <WiFi.h>
 #include <HTTPClient.h>
 
-// montar mensagem padrão
+// =====================================================
+// CABEÇALHO PADRÃO DO SISTEMA
+// =====================================================
 String getCabecalhoWhatsApp() {
   String txt = String(SISTEMA_NOME) + "\n";
   txt += "----------------------------------\n";
   return txt;
 }
 
-// Função auxiliar para obter hora formatada
+// =====================================================
+// HORA FORMATADA
+// =====================================================
 String getHoraCallMeBot() {
   if (hasInternet && WiFi.status() == WL_CONNECTED) {
     timeClient.update();
     return timeClient.getFormattedTime();
-  } else {
-    // Retorna hora baseada em millis() como fallback
-    static unsigned long startMillis = millis();
-    unsigned long segundos = (millis() - startMillis) / 1000;
-    int horas = (segundos / 3600) % 24;
-    int minutos = (segundos % 3600) / 60;
-    int segs = segundos % 60;
-    
-    char buffer[9];
-    snprintf(buffer, sizeof(buffer), "%02d:%02d:%02d", horas, minutos, segs);
-    return String(buffer);
   }
+
+  unsigned long segundos = millis() / 1000;
+  int h = (segundos / 3600) % 24;
+  int m = (segundos % 3600) / 60;
+  int s = segundos % 60;
+
+  char buf[9];
+  snprintf(buf, sizeof(buf), "%02d:%02d:%02d", h, m, s);
+  return String(buf);
 }
 
-// Propaganda da empresa
+// =====================================================
+// ASSINATURA DA EMPRESA
+// =====================================================
 String getPropaganda() {
-  String prop = "\n\n💼 *Desenvolvido por:*\n";
-  prop += "🤖 *Robótica na Lata*\n";
-  prop += "🎨 _Uma empresa de ARTe_\n";
-  prop += "⚡ _Automação Robótica e TEcnologia_\n";
-  prop += "📞 31 99916-9087";
-  return prop;
+  String p = "\n\n💼 *Desenvolvido por:*\n";
+  p += "🤖 *Robótica na Lata*\n";
+  p += "🎨 _Uma empresa de ARTe_\n";
+  p += "⚡ _Automação Robótica e TEcnologia_\n";
+  p += "📞 31 99916-9087";
+  return p;
 }
 
+// =====================================================
+// ENVIO PARA TODOS OS TELEFONES
+// =====================================================
 void enviarWhatsappTodos(const String& mensagem) {
-  // Verificar se tem internet antes de enviar
+
   if (!hasInternet || WiFi.status() != WL_CONNECTED) {
-    Serial.println("❌ Sem internet - WhatsApp não enviado");
+    Serial.println("❌ Sem internet — WhatsApp não enviado");
     return;
   }
 
-  // Adicionar propaganda ao final de cada mensagem
-  String mensagemCompleta = mensagem + getPropaganda();
-  
-  Serial.println("📤 Enviando WhatsApp para todos...");
-  enviarWhatsappFormatado(CALLMEBOT_TEL1, CALLMEBOT_APIKEY1, mensagemCompleta);
-  delay(2000);
-  enviarWhatsappFormatado(CALLMEBOT_TEL2, CALLMEBOT_APIKEY2, mensagemCompleta);
+  String msgFinal = mensagem + getPropaganda();
+
+  enviarWhatsappFormatado(CALLMEBOT_TEL1, CALLMEBOT_APIKEY1, msgFinal);
+  delay(1500);
+  enviarWhatsappFormatado(CALLMEBOT_TEL2, CALLMEBOT_APIKEY2, msgFinal);
 }
 
-bool enviarWhatsappFormatado(const String& telefone, const String& apikey, const String& mensagem) {
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("❌ WiFi não conectado - WhatsApp não enviado");
-    return false;
-  }
-
+// =====================================================
+// ENVIO HTTP
+// =====================================================
+bool enviarWhatsappFormatado(
+  const String& telefone,
+  const String& apikey,
+  const String& mensagem
+) {
   WiFiClient client;
   HTTPClient http;
 
-  // Encoding SIMPLES - apenas o necessário
-  String mensagemCodificada = "";
-  
+  String texto = "";
+
   for (int i = 0; i < mensagem.length(); i++) {
-    unsigned char c = mensagem[i];
-    
-    // Caracteres ASCII seguros - manter como estão
-    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') ||
-        c == '-' || c == '_' || c == '.' || c == '~' || c == '*' || 
-        c == ':' || c == '/' || c == '(' || c == ')' || c == '!' ||
-        c == '@' || c == '#' || c == '$' || c == '^' || c == '=' ||
-        c == '+' || c == '?' || c == ',' || c == ';' || c == '[' ||
-        c == ']' || c == '{' || c == '}' || c == '|' || c == '\\' ||
-        c == '<' || c == '>' || c == '\'' || c == '%') {
-      mensagemCodificada += (char)c;
-    }
-    else if (c == ' ') {
-      mensagemCodificada += "%20";
-    }
-    else if (c == '\n') {
-      mensagemCodificada += "%0A";  // Quebra de linha
-    }
-    else if (c == '&') {
-      mensagemCodificada += "%26";
-    }
-    else {
-      // EMOJIS e caracteres Unicode - manter como estão (UTF-8)
-      mensagemCodificada += (char)c;
-    }
+    char c = mensagem[i];
+    if (c == ' ') texto += "%20";
+    else if (c == '\n') texto += "%0A";
+    else if (c == '&') texto += "%26";
+    else texto += c;
   }
 
-  // Construir URL
-  String url = "http://api.callmebot.com/whatsapp.php?phone=" + telefone + 
-               "&apikey=" + apikey + 
-               "&text=" + mensagemCodificada;
-  
-  Serial.println("=== ENVIANDO WHATSAPP ===");
-  Serial.print("📱 Telefone: "); Serial.println(telefone);
-  Serial.print("💬 Mensagem: "); Serial.println(mensagem);
-  
+  String url =
+    "http://api.callmebot.com/whatsapp.php?phone=" +
+    telefone + "&apikey=" + apikey + "&text=" + texto;
+
   http.begin(client, url);
-  int httpCode = http.GET();
-  
-  bool sucesso = false;
-  
-  if (httpCode > 0) {
-    Serial.printf("📡 Código HTTP: %d\n", httpCode);
-    
-    if (httpCode == 200) {
-      sucesso = true;
-      Serial.println("✅ WhatsApp enviado com sucesso!");
-    } else {
-      String resposta = http.getString();
-      Serial.printf("❌ Erro HTTP: %d\n", httpCode);
-      Serial.print("📄 Resposta: "); Serial.println(resposta);
-    }
-  } else {
-    Serial.printf("❌ Falha na conexão: %s\n", http.errorToString(httpCode).c_str());
-  }
-  
+  int code = http.GET();
   http.end();
-  return sucesso;
+
+  Serial.printf("📤 WhatsApp [%s] → HTTP %d\n",
+                telefone.c_str(), code);
+
+  return (code == 200);
 }
 
+// =====================================================
+// PADRÃO GLOBAL DE MENSAGEM
+// =====================================================
+String montarMensagem(
+  const String& emoji,
+  const String& titulo,
+  const String& corpo
+) {
+  String msg = getCabecalhoWhatsApp();
+  msg += emoji + " *" + titulo + "*\n";
+  msg += "⏰ " + getHoraCallMeBot() + "\n\n";
+  msg += corpo;
+  return msg;
+}
+
+// =====================================================
+// ===================== TIPOS ==========================
+// =====================================================
+
+void enviarEvento(const String& texto) {
+  enviarWhatsappTodos(
+    montarMensagem("ℹ️", "EVENTO", texto)
+  );
+}
+
+void enviarUrgente(const String& texto) {
+  enviarWhatsappTodos(
+    montarMensagem("⚠️", "URGENTE", texto)
+  );
+}
+
+void enviarCritico(const String& texto) {
+  enviarWhatsappTodos(
+    montarMensagem("🚨", "CRÍTICO", texto)
+  );
+}
+
+void enviarResolvido(const String& texto) {
+  enviarWhatsappTodos(
+    montarMensagem("✅", "RESOLVIDO", texto)
+  );
+}
+
+// =====================================================
+// ===================== BOOT ===========================
+// =====================================================
 void enviarMensagemBoot() {
-  String msg = "🚀 *SISTEMA INICIALIZADO*\n";
-  msg += "💧 Monitor Caixa d'Agua - Edifício Aquários\n";
-  msg += "⏰ " + getHoraCallMeBot() + "\n";
-  msg += "📡 WiFi: " + String(WiFi.SSID()) + "\n";
-  msg += "🌐 IP Local: http://" + WiFi.localIP().toString() + "\n"; // ✅ Sem porta
-  msg += "🌍 DuckDNS: http://edificioaquarios.duckdns.org:3000\n"; // ✅ Sem porta
-  msg += "✅ Pronto para operar";
-  
-  Serial.println("=== ENVIANDO MENSAGEM DE BOOT ===");
-  enviarWhatsappTodos(msg);
+
+  String corpo = "";
+  corpo += "Sistema iniciado ou reiniciado\n";
+  corpo += "📡 WiFi: " + WiFi.SSID() + "\n";
+
+  if (modoAP)
+    corpo += "🌐 IP AP: " + WiFi.softAPIP().toString() + "\n";
+  else
+    corpo += "🌐 IP Local: " + WiFi.localIP().toString() + "\n";
+
+  corpo += "🌍 DuckDNS: http://" + DUCKDNS_DOMAIN + ".duckdns.org\n";
+  corpo += "📊 Primeira leitura em andamento";
+
+  enviarWhatsappTodos(
+    montarMensagem("🚀", "SISTEMA INICIALIZADO", corpo)
+  );
 }
 
-
+// =====================================================
+// STATUS PERIÓDICO
+// =====================================================
 void enviarMensagemStatus() {
+
   float nivel = calcularNivelAgua();
   float volume = calcularVolume();
-  
-  String msg = "📊 *RELATORIO PERIODICO*\n";
-  msg += "⏰ " + getHoraCallMeBot() + "\n";
-  msg += "💧 Nivel: " + String(nivel, 1) + "%\n";
-  msg += "💦 Volume: " + String(volume, 0) + " L\n";
-  msg += "🔧 Estado: " + getEstadoString() + "\n";
-  msg += "🌐 IP: " + WiFi.localIP().toString();
-  
-  Serial.println("=== ENVIANDO STATUS PERIODICO ===");
-  enviarWhatsappTodos(msg);
+
+  String corpo = "";
+  corpo += "💧 Nível: " + String(nivel, 1) + "%\n";
+  corpo += "💦 Volume: " + String(volume, 0) + " L\n";
+  corpo += "🔧 Estado: " + getEstadoString() + "\n";
+  corpo += "📡 Vazão entrada: ";
+  corpo += estadoAtual.vazaoEntrada ? "SIM" : "NÃO";
+
+  enviarWhatsappTodos(
+    montarMensagem("📊", "STATUS DO SISTEMA", corpo)
+  );
 }
 
+// =====================================================
+// ALERTAS ESPECÍFICOS
+// =====================================================
 void enviarAlertaEmergencia() {
-  float nivel = calcularNivelAgua();
-  
-  String msg = "🚨 *ALERTA DE EMERGENCIA* 🚨\n";
-  msg += "⏰ " + getHoraCallMeBot() + "\n";
-  msg += "💧 Nivel CRITICO: " + String(nivel, 1) + "%\n";
-  msg += "⚠️ Nivel abaixo de 20%\n";
-  msg += "🚒 Modo emergencia ativado";
-  
-  Serial.println("=== ENVIANDO ALERTA DE EMERGENCIA ===");
-  enviarWhatsappTodos(msg);
+  enviarCritico("Nível abaixo de 20%\nModo emergência ativado");
 }
 
 void enviarAlertaVazamentoCritico(float vazao) {
-  float nivel = calcularNivelAgua();
-  
-  String msg = "💧 *ALERTA DE VAZAMENTO* 💧\n";
-  msg += "⏰ " + getHoraCallMeBot() + "\n";
-  msg += "💧 Nivel: " + String(nivel, 1) + "%\n";
-  msg += "📉 Vazao: " + String(vazao, 1) + " L/min\n";
-  msg += "🚨 ESVAZIAMENTO RAPIDO\n";
-  msg += "⚠️ Acima de 60 L/min\n";
-  msg += "🔍 Verificar possiveis vazamentos";
-  
-  Serial.println("=== ENVIANDO ALERTA DE VAZAMENTO ===");
-  enviarWhatsappTodos(msg);
-}
+  String corpo = "";
+  corpo += "📉 Vazão detectada: " + String(vazao, 1) + " L/min\n";
+  corpo += "⚠️ Possível vazamento\n";
+  corpo += "🔍 Verificar imediatamente";
 
-void enviarRelatorioDiario() {
-  float nivel = calcularNivelAgua();
-  
-  String msg = "📅 *RELATORIO DIARIO - 23:30*\n";
-  msg += "💧 Nivel final: " + String(nivel, 1) + "%\n";
-  msg += "🔧 Status: " + getEstadoString() + "\n";
-  msg += "🌜 Boa noite!";
-  
-  Serial.println("=== ENVIANDO RELATORIO DIARIO ===");
-  enviarWhatsappTodos(msg);
+  enviarCritico(corpo);
 }
