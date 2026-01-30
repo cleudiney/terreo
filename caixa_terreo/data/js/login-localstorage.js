@@ -1,7 +1,9 @@
+// ===================================================
+//login-localstorage.js
 // =====================================================
 // LOGIN — COMPATÍVEL COM ESP32 WebServer
+//login-localstorage.js
 // =====================================================
-
 document.addEventListener("DOMContentLoaded", () => {
 
   const form = document.getElementById("loginForm");
@@ -18,7 +20,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
 
-      // ⚠️ ESP32 NÃO LÊ JSON → precisa x-www-form-urlencoded
       const resp = await fetch("/api/login", {
         method: "POST",
         headers: {
@@ -33,18 +34,17 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error("Usuário ou senha inválidos");
       }
 
-      // backend só confirma sucesso
       await resp.text();
 
-      // sessão frontend
-      localStorage.setItem("logado", "true");
-      localStorage.setItem("usuario", usuario);
+      // ✅ PADRÃO DO SISTEMA
+      localStorage.setItem("sessaoAtiva", "true");
+      localStorage.setItem("usuarioLogado", usuario);
       localStorage.setItem("loginTime", Date.now());
 
       mostrarSucesso("✅ Login realizado com sucesso");
 
       setTimeout(() => {
-        window.location.href = "/index.html";
+        window.location.replace("/index.html");
       }, 800);
 
     } catch (err) {

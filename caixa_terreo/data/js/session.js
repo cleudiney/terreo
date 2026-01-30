@@ -1,16 +1,16 @@
 // =====================================================
 // CONTROLE DE SESSÃO FRONTEND
 // =====================================================
-
 const SESSION_TIMEOUT_MS = 10 * 60 * 1000;
 
 function verificarSessao() {
 
-  const logado    = localStorage.getItem("logado");
+  const usuario = localStorage.getItem("usuarioLogado");
+  const ativa   = localStorage.getItem("sessaoAtiva");
   const loginTime = localStorage.getItem("loginTime");
 
-  if (!logado || !loginTime) {
-    window.location.href = "/login.html";
+  if (!usuario || ativa !== "true" || !loginTime) {
+    window.location.replace("/login-localstorage.html");
     return;
   }
 
@@ -21,11 +21,10 @@ function verificarSessao() {
     fetch("/api/logout", { method: "POST" })
       .finally(() => {
         localStorage.clear();
-        window.location.href = "/login.html";
+        window.location.replace("/login-localstorage.html");
       });
   }
 }
 
-// executa a cada 15 segundos
 setInterval(verificarSessao, 15000);
 verificarSessao();

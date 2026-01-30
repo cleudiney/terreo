@@ -58,8 +58,28 @@ void enviarWhatsappTodos(const String& mensagem) {
   String msgFinal = mensagem + getPropaganda();
 
   enviarWhatsappFormatado(CALLMEBOT_TEL1, CALLMEBOT_APIKEY1, msgFinal);
-  delay(1500);
+  //delay(1500);
+  unsigned long inicio = millis();
+    
+    while (millis() - inicio < 1500) {
+        yield();  // mantém WiFi, watchdog e RTOS vivos
+    }
   enviarWhatsappFormatado(CALLMEBOT_TEL2, CALLMEBOT_APIKEY2, msgFinal);
+  //delay(1500);
+  inicio = millis();
+    
+    while (millis() - inicio < 1500) {
+        yield();  // mantém WiFi, watchdog e RTOS vivos
+    }
+  enviarWhatsappFormatado(CALLMEBOT_TEL3, CALLMEBOT_APIKEY3, msgFinal);
+    //delay(1500);
+   inicio = millis();
+    
+    while (millis() - inicio < 1500) {
+        yield();  // mantém WiFi, watchdog e RTOS vivos
+    }
+  Serial.println("WhatsApp enviado");
+
 }
 
 // =====================================================
