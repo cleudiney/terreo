@@ -39,34 +39,52 @@ void notificarAviso(
 void processarNotificacao(String tipo, String mensagem) {
 
   static unsigned long ultimaCritica = 0;
+  static String ultimaMensagemEnviada = "";
+  static unsigned long ultimoEnvio = 0;
 
-  // controle nunca envia
+  unsigned long agora = millis();
+
+  // Nunca envia controle
   if (tipo == "controle") return;
 
-  // urgente → uma vez
+  // 🔒 BLOQUEIO GLOBAL DE REPETIÇÃO (30s)
+  if (mensagem == ultimaMensagemEnviada &&
+      (agora - ultimoEnvio) < 30000) {
+    return;
+  }
+
+  // =========================
+  // URGENTE (1x)
+  // =========================
   if (tipo == "urgente") {
     enviarWhatsappTodos("⚠️ URGENTE\n" + mensagem);
-    return;
   }
 
-  // crítica → a cada 10 minutos
-  if (tipo == "critica") {
-    if (millis() - ultimaCritica > 600000) {
-      enviarWhatsappTodos("🚨 CRÍTICO\n" + mensagem);
-      ultimaCritica = millis();
-    }
-    return;
+  // =========================
+  // CRÍTICO (10 min)
+  // =========================
+  else if (tipo == "critica") {
+    if (agora - ultimaCritica < 600000) return;
+
+    enviarWhatsappTodos("🚨 CRÍTICO\n" + mensagem);
+    ultimaCritica = agora;
   }
 
-  // resolvido → uma vez
-  if (tipo == "resolvido") {
+  // =========================
+  // RESOLVIDO (1x)
+  // =========================
+  else if (tipo == "resolvido") {
     enviarWhatsappTodos("✅ RESOLVIDO\n" + mensagem);
-    return;
   }
 
-  // evento → uma vez
-  if (tipo == "evento") {
+  // =========================
+  // EVENTO (1x com bloqueio)
+  // =========================
+  else if (tipo == "evento") {
     enviarWhatsappTodos("ℹ️ EVENTO\n" + mensagem);
-    return;
   }
+
+  // Atualiza controle global
+  ultimaMensagemEnviada = mensagem;
+  ultimoEnvio = agora;
 }
