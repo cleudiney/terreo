@@ -60,7 +60,7 @@ void inicializarWebServer() {
 
   // Página de login
   server.on("/login.html", HTTP_GET, []() {
-      File file = SPIFFS.open("/index.html", "r");
+      File file = SPIFFS.open("/login.html", "r");
       server.streamFile(file, "text/html");
       file.close();
   });
