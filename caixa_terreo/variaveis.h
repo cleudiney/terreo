@@ -120,8 +120,13 @@ extern NTPClient timeClient;
 // =====================================================
 // ============== CONTROLE CAIXA D’ÁGUA =================
 // =====================================================
-#define ALTURA_UTIL_CM 180.0
-#define VOLUME_TOTAL_L 20000.0
+#define ALTU_CAIXAT 200.0
+#define BOIA_CAIXAT 30.0
+#define ALTURA_UTIL_CM (ALTU_CAIXAT - BOIA_CAIXAT)
+#define LADO_CAIXAT 355.0
+#define PROF_CAIXAT 415.0
+#define VOLUME_TOTAL_L ((ALTURA_UTIL_CM * LADO_CAIXAT * PROF_CAIXAT) / 1000.0)
+//lateral 355 profundidade 415 altura 200 boia 30 
 
 #define VAZAO_VAZAMENTO_CRITICO 60.0
 #define NIVEL_DESLIGA_EMERGENCIA_CM 10.0
