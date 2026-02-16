@@ -47,6 +47,10 @@ EstadoCaixa estadoAtual = {
 
 unsigned long tUltimaMensagemVazamento = 0;
 
+bool alerta110Enviado = false;
+bool alerta115Enviado = false;
+bool alertaExtremoEnviado = false;
+
 // =====================================================
 // ===================== CONTROLE =======================
 // =====================================================

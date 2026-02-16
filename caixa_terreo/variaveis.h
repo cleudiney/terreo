@@ -117,6 +117,10 @@ extern float vazaoTotalDiaria;
 extern WiFiUDP ntpUDP;
 extern NTPClient timeClient;
 
+extern bool alerta110Enviado;
+extern bool alerta115Enviado;
+extern bool alertaExtremoEnviado;
+
 // =====================================================
 // ============== CONTROLE CAIXA D’ÁGUA =================
 // =====================================================

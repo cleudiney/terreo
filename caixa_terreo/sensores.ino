@@ -1,6 +1,13 @@
 //sensores.ino
 #include "variaveis.h"
 
+// ==========================================
+// CONTROLE DE ALERTAS (ANTI-SPAM)
+// ==========================================
+bool alerta110Enviado = false;
+bool alerta115Enviado = false;
+bool alertaExtremoEnviado = false;
+
 // =====================================================
 // VARIÁVEIS INTERNAS DO SENSOR
 // =====================================================
@@ -19,7 +26,7 @@ void lerTodosSensores() {
 // LEITURA DO ULTRASSOM (COM FILTRO)
 // =====================================================
 void lerSensorUltrassom() {
-  const int amostras = 5;
+  const int amostras = 20;
   float soma = 0;
   int leiturasValidas = 0;
 
@@ -40,18 +47,88 @@ void lerSensorUltrassom() {
   }
 
   if (leiturasValidas == 0) return;
-  
+
   float distanciaMedia = soma / leiturasValidas;
-  estadoAtual.nivelCm = distanciaMedia;
-  
-  // Converte para percentual
-  float nivelPercentual = 100.0f - ((distanciaMedia / ALTURA_CAIXA_CM) * 100.0f);
-  if (nivelPercentual < 0)   nivelPercentual = 0;
-  if (nivelPercentual > 100) nivelPercentual = 100;
-  
+
+  // ==========================================
+  // CONVERTE DISTÂNCIA EM ALTURA REAL DE ÁGUA
+  // ==========================================
+  float alturaAgua = ALTU_CAIXAT - distanciaMedia;
+
+  if (alturaAgua < 0) alturaAgua = 0;
+  if (alturaAgua > ALTU_CAIXAT) alturaAgua = ALTU_CAIXAT;
+
+  estadoAtual.nivelCm = alturaAgua;
+
+  // ==========================================
+  // Percentual REAL (100% = ALTURA_UTIL_CM)
+  // ==========================================
+  float nivelPercentual =
+      (alturaAgua / ALTURA_UTIL_CM) * 100.0f;
+
   estadoAtual.nivelPercentual = nivelPercentual;
-  
+
+  float distanciaAteSensor = distanciaMedia;
+
+  // ==========================================
+  // ALERTAS DE SOBRE-NÍVEL (ANTI-SPAM)
+  // ==========================================
+
+  // --- 110% ---
+  if (nivelPercentual >= 110.0f && !alerta110Enviado) {
+
+    registrarAviso("urgente",
+      "ATENÇÃO: caixa em " +
+      String(nivelPercentual,1) + "%",
+      "sistema");
+
+    alerta110Enviado = true;
+  }
+
+  // --- 115% ---
+  if (nivelPercentual >= 115.0f && !alerta115Enviado) {
+
+    registrarAviso("critica",
+      "ATENÇÃO CRÍTICO: caixa em " +
+      String(nivelPercentual,1) +
+      "% - faltam " +
+      String(distanciaAteSensor,1) +
+      " cm para atingir o sensor",
+      "sistema");
+
+    alerta115Enviado = true;
+  }
+
+  // --- RISCO EXTREMO (<=2cm) ---
+  if (distanciaAteSensor <= 2.0f && !alertaExtremoEnviado) {
+
+    registrarAviso("critica",
+      "RISCO EXTREMO: caixa em " +
+      String(nivelPercentual,1) +
+      "% - faltam 2 cm para atingir o sensor",
+      "sistema");
+
+    desligarAmbasBombas("sistema");
+
+    alertaExtremoEnviado = true;
+  }
+
+  // ==========================================
+  // RESET AUTOMÁTICO (HISTERÉSE)
+  // ==========================================
+
+  if (nivelPercentual < 105.0f) {
+    alerta110Enviado = false;
+    alerta115Enviado = false;
+  }
+
+  if (distanciaAteSensor > 5.0f) {
+    alertaExtremoEnviado = false;
+  }
+
+  // ==========================================
   // Atualiza estado baseado no nível
+  // ==========================================
   if (estadoAtual.vazaoEntrada && (estadoAtual.bombaAAtiva || estadoAtual.bombaBAtiva)) {
     estadoAtual.estado = CAIXA_ENCHENDO;
   } else if (!estadoAtual.vazaoEntrada && nivelPercentual > 0) {
@@ -90,14 +167,12 @@ void lerSensorVazao() {
 // INICIALIZAÇÃO DE TODOS OS SENSORES
 // =====================================================
 void inicializarTodosSensores() {
-  // Ultrassom
   pinMode(PINO_TRIG, OUTPUT);
   pinMode(PINO_ECHO, INPUT);
-  
-  // Vazão
+
   pinMode(PINO_SENSOR_VAZAO, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(PINO_SENSOR_VAZAO), 
+  attachInterrupt(digitalPinToInterrupt(PINO_SENSOR_VAZAO),
                   pulsoVazao, FALLING);
-  
+
   Serial.println("✅ Todos os sensores inicializados");
 }
