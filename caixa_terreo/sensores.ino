@@ -4,10 +4,7 @@
 // ==========================================
 // CONTROLE DE ALERTAS (ANTI-SPAM)
 // ==========================================
-bool alerta110Enviado = false;
-bool alerta115Enviado = false;
-bool alertaExtremoEnviado = false;
-
+//variaveis globais
 // =====================================================
 // VARIÁVEIS INTERNAS DO SENSOR
 // =====================================================
