@@ -8,6 +8,22 @@
 #include <NTPClient.h>
 #include <WebServer.h>
 
+// ==============================
+// Intervalos de notificação
+// ==============================
+
+extern const unsigned long INTERVALO_URGENTE_MS;
+extern const unsigned long INTERVALO_CRITICA_MS;
+extern const unsigned long INTERVALO_INFO_MS;
+
+// ==============================
+// Controle de tempo (timers)
+// ==============================
+
+extern unsigned long ultimoUrgente;
+extern unsigned long ultimoCritica;
+extern unsigned long ultimoInfo;
+
 // =====================================================
 // ===================== DEFINIÇÕES BÁSICAS =============
 // =====================================================

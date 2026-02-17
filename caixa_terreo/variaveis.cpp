@@ -24,6 +24,22 @@ const String CALLMEBOT_APIKEY2 = "9472853";
 const String CALLMEBOT_TEL3    = "5553192590362";
 const String CALLMEBOT_APIKEY3 = "8786448";
 
+// ==============================
+// Intervalos padrão
+// ==============================
+
+const unsigned long INTERVALO_URGENTE_MS  = 10UL * 60UL * 1000UL; // 10 min
+const unsigned long INTERVALO_CRITICA_MS  = 10UL * 60UL * 1000UL; // 10 min
+const unsigned long INTERVALO_INFO_MS     = 2UL  * 60UL * 1000UL; // 2 min
+
+// ==============================
+// Timers
+// ==============================
+
+unsigned long ultimoUrgente  = 0;
+unsigned long ultimoCritica  = 0;
+unsigned long ultimoInfo     = 0;
+
 // =====================================================
 // ===================== CONECTIVIDADE ==================
 // =====================================================

@@ -1,70 +1,40 @@
-//notificacoes.ino
+// notificacoes.ino
 
-void notificarAviso(
-  String tipo,
-  String mensagem,
-  String usuario
-) {
-  if (tipo == "controle") return;
-
-  static unsigned long ultimaCritica = 0;
-
-  // urgente → uma vez
-  if (tipo == "urgente") {
-    enviarWhatsappTodos(mensagem);
-    return;
-  }
-
-  // crítica → a cada 10 minutos
-  if (tipo == "critica") {
-    if (millis() - ultimaCritica > 600000) {
-      enviarWhatsappTodos(mensagem);
-      ultimaCritica = millis();
-    }
-    return;
-  }
-
-  // resolvido → uma vez
-  if (tipo == "resolvido") {
-    enviarWhatsappTodos(mensagem);
-    return;
-  }
-
-  // evento → uma vez
-  if (tipo == "evento") {
-    enviarWhatsappTodos(mensagem);
-    return;
-  }
-}
 void processarNotificacao(String tipo, String mensagem) {
 
   static unsigned long ultimaCritica = 0;
-  static String ultimaMensagemEnviada = "";
-  static unsigned long ultimoEnvio = 0;
+  static unsigned long ultimoEnvioGlobal = 0;
+  static String ultimaMensagem = "";
 
   unsigned long agora = millis();
 
   // Nunca envia controle
   if (tipo == "controle") return;
 
-  // 🔒 BLOQUEIO GLOBAL DE REPETIÇÃO (30s)
-  if (mensagem == ultimaMensagemEnviada &&
-      (agora - ultimoEnvio) < 30000) {
+  // =========================
+  // BLOQUEIO GLOBAL (30s)
+  // Evita spam idêntico
+  // =========================
+  if (mensagem == ultimaMensagem &&
+      (agora - ultimoEnvioGlobal) < 30000) {
     return;
   }
 
   // =========================
-  // URGENTE (1x)
+  // URGENTE (envia sempre)
   // =========================
   if (tipo == "urgente") {
     enviarWhatsappTodos("⚠️ URGENTE\n" + mensagem);
   }
 
   // =========================
-  // CRÍTICO (10 min)
+  // CRÍTICO (10 minutos)
   // =========================
   else if (tipo == "critica") {
-    if (agora - ultimaCritica < 600000) return;
+
+    if ((agora - ultimaCritica) < 600000) {
+      return;
+    }
 
     enviarWhatsappTodos("🚨 CRÍTICO\n" + mensagem);
     ultimaCritica = agora;
@@ -78,13 +48,13 @@ void processarNotificacao(String tipo, String mensagem) {
   }
 
   // =========================
-  // EVENTO (1x com bloqueio)
+  // EVENTO (1x)
   // =========================
   else if (tipo == "evento") {
     enviarWhatsappTodos("ℹ️ EVENTO\n" + mensagem);
   }
 
   // Atualiza controle global
-  ultimaMensagemEnviada = mensagem;
-  ultimoEnvio = agora;
+  ultimaMensagem = mensagem;
+  ultimoEnvioGlobal = agora;
 }
