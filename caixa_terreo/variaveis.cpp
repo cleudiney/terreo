@@ -3,8 +3,14 @@
 // =====================================================
 // ===================== CREDENCIAIS ====================
 // =====================================================
-const char* SSID        = "esp32_caixa";
+/*const char* SSID        = "esp32_caixa";
 const char* PASSWORD    = "Config123#";
+const char* AP_SSID     = "caixa_agua_aquarios";
+const char* AP_PASSWORD = "@caixa#C1234c!";
+*/
+
+const char* SSID        = "LAZARO";
+const char* PASSWORD    = "20021831";
 const char* AP_SSID     = "caixa_agua_aquarios";
 const char* AP_PASSWORD = "@caixa#C1234c!";
 
@@ -66,7 +72,7 @@ unsigned long tUltimaMensagemVazamento = 0;
 bool alerta110Enviado = false;
 bool alerta115Enviado = false;
 bool alertaExtremoEnviado = false;
-
+bool estadoBotaoEmergenciaAnterior = false;
 // =====================================================
 // ===================== CONTROLE =======================
 // =====================================================

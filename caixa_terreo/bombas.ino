@@ -37,11 +37,15 @@ void desligarBomba(char bomba, String usuario) {
     registrarAviso("evento", "Bomba B desligada manualmente", usuario);
   }
 }
-
 // =====================================================
 // LIGAR / DESLIGAR AMBAS AS BOMBAS
 // =====================================================
 void ligarAmbasBombas(String usuario) {
+
+  // 🔒 Já estão ligadas? Não faz nada.
+  if (estadoAtual.bombaAAtiva && estadoAtual.bombaBAtiva) {
+    return;
+  }
 
   digitalWrite(PINO_BOMBA_A, HIGH);
   digitalWrite(PINO_BOMBA_B, HIGH);
@@ -54,6 +58,11 @@ void ligarAmbasBombas(String usuario) {
 
 void desligarAmbasBombas(String usuario) {
 
+  // 🔒 Já estão desligadas? Não faz nada.
+  if (!estadoAtual.bombaAAtiva && !estadoAtual.bombaBAtiva) {
+    return;
+  }
+
   digitalWrite(PINO_BOMBA_A, LOW);
   digitalWrite(PINO_BOMBA_B, LOW);
 
@@ -62,7 +71,6 @@ void desligarAmbasBombas(String usuario) {
 
   registrarAviso("evento", "Ambas as bombas desligadas", usuario);
 }
-
 // =====================================================
 // CONTROLE AUTOMÁTICO DAS BOMBAS
 // =====================================================

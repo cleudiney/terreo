@@ -16,6 +16,8 @@ extern const unsigned long INTERVALO_URGENTE_MS;
 extern const unsigned long INTERVALO_CRITICA_MS;
 extern const unsigned long INTERVALO_INFO_MS;
 
+extern bool estadoBotaoEmergenciaAnterior;
+
 // ==============================
 // Controle de tempo (timers)
 // ==============================
