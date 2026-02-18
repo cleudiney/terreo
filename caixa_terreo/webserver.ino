@@ -60,7 +60,6 @@ static bool podeAcessarHtml(const String& path) {
 // =====================================================
 // [ADIÇÃO]
 // Evita reinicialização dupla do servidor
-static bool webserverInicializado = false;
 
 static String getContentType(const String& path) {
   if (path.endsWith(".html")) return "text/html";
