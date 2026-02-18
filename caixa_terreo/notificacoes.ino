@@ -1,45 +1,15 @@
-//notificacoes.ino
+// notificacoes.ino
 
-<<<<<<< ours
-void processarNotificacao(String tipo, String mensagem) {
+// =====================================================
+// INTERVALOS DE REPETIÇÃO
+// =====================================================
+const unsigned long INTERVALO_REPETICAO_URGENTE_MS  = 10UL * 60UL * 1000UL;
+const unsigned long INTERVALO_REPETICAO_CRITICA_MS  = 10UL * 60UL * 1000UL;
+const unsigned long INTERVALO_REPETICAO_INFO_MS     = 2UL  * 60UL * 1000UL;
 
-  static unsigned long ultimaCritica = 0;
-  static unsigned long ultimoEnvioGlobal = 0;
-  static String ultimaMensagem = "";
-
-  unsigned long agora = millis();
-
-  // Nunca envia controle
-  if (tipo == "controle") return;
-
-  // =========================
-  // BLOQUEIO GLOBAL (30s)
-  // Evita spam idêntico
-  // =========================
-  if (mensagem == ultimaMensagem &&
-      (agora - ultimoEnvioGlobal) < 30000) {
-    return;
-  }
-
-  // =========================
-  // URGENTE (envia sempre)
-  // =========================
-  if (tipo == "urgente") {
-    enviarWhatsappTodos("⚠️ URGENTE\n" + mensagem);
-  }
-
-  // =========================
-  // CRÍTICO (10 minutos)
-  // =========================
-  else if (tipo == "critica") {
-
-    if ((agora - ultimaCritica) < 600000) {
-      return;
-=======
-const unsigned long INTERVALO_REPETICAO_URGENTE_MS = 10UL * 60UL * 1000UL;
-const unsigned long INTERVALO_REPETICAO_CRITICA_MS = 10UL * 60UL * 1000UL;
-const unsigned long INTERVALO_REPETICAO_INFO_MS    = 2UL * 60UL * 1000UL;
-
+// =====================================================
+// CONTROLE ANTI-SPAM (tipo + mensagem)
+// =====================================================
 bool podeEnviarNotificacao(
   const String& tipo,
   const String& mensagem,
@@ -49,7 +19,8 @@ bool podeEnviarNotificacao(
   static String ultimaMensagem = "";
   static unsigned long ultimoEnvioMs = 0;
 
-  bool mesmaNotificacao = (tipo == ultimoTipo && mensagem == ultimaMensagem);
+  bool mesmaNotificacao =
+    (tipo == ultimoTipo && mensagem == ultimaMensagem);
 
   if (mesmaNotificacao &&
       ultimoEnvioMs > 0 &&
@@ -60,9 +31,13 @@ bool podeEnviarNotificacao(
   ultimoTipo = tipo;
   ultimaMensagem = mensagem;
   ultimoEnvioMs = millis();
+
   return true;
 }
 
+// =====================================================
+// NOTIFICAR AVISO (sem prefixo)
+// =====================================================
 void notificarAviso(
   String tipo,
   String mensagem,
@@ -70,93 +45,44 @@ void notificarAviso(
 ) {
   if (tipo == "controle") return;
 
-  // urgente → uma vez
-  if (tipo == "urgente") {
-    if (podeEnviarNotificacao(tipo, mensagem, INTERVALO_REPETICAO_URGENTE_MS)) {
-      enviarWhatsappTodos(mensagem);
-    }
-    return;
-  }
+  unsigned long intervalo = INTERVALO_REPETICAO_INFO_MS;
 
-  // crítica → a cada 10 minutos
-  if (tipo == "critica") {
-    if (podeEnviarNotificacao(tipo, mensagem, INTERVALO_REPETICAO_CRITICA_MS)) {
-      enviarWhatsappTodos(mensagem);
-    }
-    return;
-  }
+  if (tipo == "urgente")
+    intervalo = INTERVALO_REPETICAO_URGENTE_MS;
+  else if (tipo == "critica")
+    intervalo = INTERVALO_REPETICAO_CRITICA_MS;
 
-  // resolvido → uma vez
-  if (tipo == "resolvido") {
-    if (podeEnviarNotificacao(tipo, mensagem, INTERVALO_REPETICAO_INFO_MS)) {
-      enviarWhatsappTodos(mensagem);
-    }
-    return;
-  }
-
-  // evento → uma vez
-  if (tipo == "evento") {
-    if (podeEnviarNotificacao(tipo, mensagem, INTERVALO_REPETICAO_INFO_MS)) {
-      enviarWhatsappTodos(mensagem);
-    }
-    return;
+  if (podeEnviarNotificacao(tipo, mensagem, intervalo)) {
+    enviarWhatsappTodos(mensagem);
   }
 }
+
+// =====================================================
+// PROCESSAR NOTIFICAÇÃO (com prefixo)
+// =====================================================
 void processarNotificacao(String tipo, String mensagem) {
-  // controle nunca envia
+
   if (tipo == "controle") return;
 
-  // urgente → uma vez
+  unsigned long intervalo = INTERVALO_REPETICAO_INFO_MS;
+  String prefixo = "";
+
   if (tipo == "urgente") {
-    if (podeEnviarNotificacao(tipo, mensagem, INTERVALO_REPETICAO_URGENTE_MS)) {
-      enviarWhatsappTodos("⚠️ URGENTE\n" + mensagem);
-    }
-    return;
+    intervalo = INTERVALO_REPETICAO_URGENTE_MS;
+    prefixo = "⚠️ URGENTE\n";
   }
-
-  // crítica → a cada 10 minutos
-  if (tipo == "critica") {
-    if (podeEnviarNotificacao(tipo, mensagem, INTERVALO_REPETICAO_CRITICA_MS)) {
-      enviarWhatsappTodos("🚨 CRÍTICO\n" + mensagem);
->>>>>>> theirs
-    }
-
-    enviarWhatsappTodos("🚨 CRÍTICO\n" + mensagem);
-    ultimaCritica = agora;
+  else if (tipo == "critica") {
+    intervalo = INTERVALO_REPETICAO_CRITICA_MS;
+    prefixo = "🚨 CRÍTICO\n";
   }
-
-<<<<<<< ours
-  // =========================
-  // RESOLVIDO (1x)
-  // =========================
   else if (tipo == "resolvido") {
-    enviarWhatsappTodos("✅ RESOLVIDO\n" + mensagem);
+    prefixo = "✅ RESOLVIDO\n";
   }
-
-  // =========================
-  // EVENTO (1x)
-  // =========================
   else if (tipo == "evento") {
-    enviarWhatsappTodos("ℹ️ EVENTO\n" + mensagem);
-=======
-  // resolvido → uma vez
-  if (tipo == "resolvido") {
-    if (podeEnviarNotificacao(tipo, mensagem, INTERVALO_REPETICAO_INFO_MS)) {
-      enviarWhatsappTodos("✅ RESOLVIDO\n" + mensagem);
-    }
-    return;
+    prefixo = "ℹ️ EVENTO\n";
   }
 
-  // evento → uma vez
-  if (tipo == "evento") {
-    if (podeEnviarNotificacao(tipo, mensagem, INTERVALO_REPETICAO_INFO_MS)) {
-      enviarWhatsappTodos("ℹ️ EVENTO\n" + mensagem);
-    }
-    return;
->>>>>>> theirs
+  if (podeEnviarNotificacao(tipo, mensagem, intervalo)) {
+    enviarWhatsappTodos(prefixo + mensagem);
   }
-
-  // Atualiza controle global
-  ultimaMensagem = mensagem;
-  ultimoEnvioGlobal = agora;
 }
