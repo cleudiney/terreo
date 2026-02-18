@@ -20,12 +20,12 @@ static String getContentType(const String& path) {
 // =====================================================
 // CONTROLE DE ACESSO
 // =====================================================
-static bool rotaHtmlPublica(const String& path) {
+/*static bool rotaHtmlPublica(const String& path) {
   return (path == "/login.html" ||
           path == "/login-localstorage.html" ||
           path == "/login-zero.html");
 }
-
+*/
 static NivelAcesso obterNivelMinimoHtml(const String& path) {
 
   if (path == "/adm.html" ||
