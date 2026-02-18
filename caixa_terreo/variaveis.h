@@ -15,7 +15,6 @@
 extern const unsigned long INTERVALO_URGENTE_MS;
 extern const unsigned long INTERVALO_CRITICA_MS;
 extern const unsigned long INTERVALO_INFO_MS;
-
 extern bool estadoBotaoEmergenciaAnterior;
 
 // ==============================
@@ -25,6 +24,21 @@ extern bool estadoBotaoEmergenciaAnterior;
 extern unsigned long ultimoUrgente;
 extern unsigned long ultimoCritica;
 extern unsigned long ultimoInfo;
+
+
+enum NivelAcesso {
+  ACESSO_NENHUM = 0,
+  ACESSO_MORADOR,
+  ACESSO_ZELADOR,
+  ACESSO_SUBSINDICO,
+  ACESSO_SINDICO,
+  ACESSO_ADMIN
+};
+
+extern bool autenticado;
+extern bool sessaoAtiva;
+extern String usuarioLogado;
+extern NivelAcesso nivelAcessoLogadoEnum;
 
 // =====================================================
 // ===================== DEFINIÇÕES BÁSICAS =============
@@ -97,14 +111,6 @@ enum EstadoCaixaEnum {
   CAIXA_ESTAVEL
 };
 
-enum NivelAcesso {
-  ACESSO_NENHUM = 0,
-  ACESSO_MORADOR,
-  ACESSO_ZELADOR,
-  ACESSO_SUBSINDICO,
-  ACESSO_SINDICO,
-  ACESSO_ADMIN
-};
 
 // =====================================================
 // ===================== ESTRUTURAS =====================
@@ -167,9 +173,6 @@ extern unsigned long tUltimaMensagemVazamento;
 #define WEB_SERVER_PORT 3000
 
 extern WebServer server;
-
-extern bool autenticado;
-extern bool sessaoAtiva;
 
 extern String usuarioLogado;
 extern String nivelAcessoLogado;
