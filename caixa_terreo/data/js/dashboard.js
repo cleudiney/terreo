@@ -17,7 +17,6 @@ async function atualizar() {
 
     const payload = await resp.json();
     const data = payload?.data || payload;
-
     atualizarDashboard(data);
 
   } catch (e) {
@@ -47,8 +46,11 @@ function atualizarDashboard(data) {
   atualizarTanque(c.nivelPercentual);
 
   // Bombas
-  const statusBomba = (c.bombaA || c.bombaB) ? 'LIGADA' : 'DESLIGADA';
-  setText('statusBomba', statusBomba);
+  const statusBomba = c.bombaA || c.bombaB ? 'LIGADA' : 'DESLIGADA';
+  setText(
+    'statusBomba',
+    statusBomba
+  );
   setText('bombaStatus', statusBomba);
 
   // Vazão
@@ -60,14 +62,12 @@ function atualizarDashboard(data) {
   verificarAlerta(c);
 }
 
-/* ================= VOLUME ================= */
 function calcularVolumeEstimado(nivelPercentual) {
   const VOLUME_TOTAL_L = 20000;
   const volume = (nivelPercentual / 100) * VOLUME_TOTAL_L;
   return Math.round(volume);
 }
 
-/* ================= TANQUE VISUAL ================= */
 function atualizarTanque(nivelPercentual) {
   const agua = document.getElementById('agua');
   if (!agua) return;
