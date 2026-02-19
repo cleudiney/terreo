@@ -6,11 +6,14 @@
 // =====================================================
 void apiStatus() {
 
-  if (!autenticado) {
+  if (!autenticado || !sessaoAtiva) {
     server.send(401, "application/json",
                 "{\"erro\":\"nao autenticado\"}");
     return;
   }
+
+  // Renovar atividade da sessão
+  ultimaAtividadeSessao = millis();
 
   String json = "{";
 

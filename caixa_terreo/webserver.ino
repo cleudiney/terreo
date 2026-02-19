@@ -63,33 +63,6 @@ static bool podeAcessarHtml(const String& path) {
 // Evita reinicialização dupla do servidor
 
 
-static void servirArquivo(const String& path) {
-  if (path.endsWith(".html") && !podeAcessarHtml(path)) {
-    if (!autenticado || !sessaoAtiva) {
-      server.sendHeader("Location", "/login.html", true);
-      server.send(302, "text/plain", "Redirecting to login...");
-      return;
-    }
-
-    server.send(403, "application/json", "{\"erro\":\"Acesso negado\"}");
-    return;
-  }
-
-  if (!SPIFFS.exists(path)) {
-    server.send(404, "application/json", "{\"erro\":\"Arquivo não encontrado\"}");
-    return;
-  }
-
-  File file = SPIFFS.open(path, "r");
-  if (!file) {
-    server.send(500, "application/json", "{\"erro\":\"Falha ao abrir arquivo\"}");
-    return;
-  }
-
-  server.streamFile(file, getContentType(path));
-  file.close();
-}
-
 static String getContentType(const String& path) {
   if (path.endsWith(".html")) return "text/html";
   if (path.endsWith(".css"))  return "text/css";
@@ -145,6 +118,11 @@ static void servirArquivo(const String& path) {
 
     server.send(403, "application/json", "{\"erro\":\"Acesso negado\"}");
     return;
+  }
+
+  // Renovar atividade de sessão para páginas HTML autenticadas
+  if (path.endsWith(".html") && autenticado && sessaoAtiva) {
+    ultimaAtividadeSessao = millis();
   }
 
   if (!SPIFFS.exists(path)) {

@@ -34,9 +34,17 @@ document.addEventListener("DOMContentLoaded", () => {
         throw new Error("Usuário ou senha inválidos");
       }
 
-      await resp.text();
+      const data = await resp.json();
 
-      // ✅ PADRÃO DO SISTEMA
+      // ✅ PADRÃO DO SISTEMA - Usar chaves padronizadas
+      const nivel = data?.data?.nivel || data?.nivel || "morador";
+      const expiraEm = Date.now() + (15 * 60 * 1000); // 15 minutos
+      
+      localStorage.setItem("authUser", usuario);
+      localStorage.setItem("authNivel", nivel);
+      localStorage.setItem("authExpira", expiraEm);
+      
+      // Retrocompatibilidade (alguns scripts ainda podem usar estas chaves)
       localStorage.setItem("sessaoAtiva", "true");
       localStorage.setItem("usuarioLogado", usuario);
       localStorage.setItem("loginTime", Date.now());

@@ -13,7 +13,19 @@ document.addEventListener('DOMContentLoaded', () => {
 async function atualizar() {
   try {
     const resp = await fetch('/api/status');
-    if (!resp.ok) return;
+    
+    // Se não autenticado (401), redirecionar para login
+    if (resp.status === 401) {
+      console.warn('⛔ Sessão expirada (401)');
+      localStorage.clear();
+      window.location.replace("/login.html");
+      return;
+    }
+    
+    if (!resp.ok) {
+      console.warn('❌ Erro status', resp.status);
+      return;
+    }
 
     const payload = await resp.json();
     const data = payload?.data || payload;
