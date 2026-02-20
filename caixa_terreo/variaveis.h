@@ -192,6 +192,8 @@ float calcularVolume();
 String getEstadoString();
 
 void registrarAviso(String tipo, String mensagem, String usuario);
+void inicializarDisparos();
+void loopDisparos();
 
 // ======================= SPIFFS =======================
 void inicializarSPIFFS();

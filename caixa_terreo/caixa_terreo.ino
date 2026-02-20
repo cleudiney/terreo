@@ -51,6 +51,8 @@ void setup() {
   // 10. Inicializar sistema de avisos ***
   Serial.println("📢 Inicializando sistema de avisos...");
   inicializarSistemaAvisos();
+  Serial.println("Disparos: inicializando...");
+  inicializarDisparos();
   // 11. Inicializar estatísticas
   Serial.println("📊 Inicializando estatísticas...");
   inicializarEstatisticas();
@@ -121,7 +123,9 @@ void setup() {
         loopEstatisticas();
         // 8. Webserver
         loopWebServer();   
-        // 9. DuckDns
+        // 9. Disparos
+        loopDisparos();
+        // 10. DuckDns
         verificarDuckDNS();   
 
   delay(1000);
