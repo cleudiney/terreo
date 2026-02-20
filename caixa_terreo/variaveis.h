@@ -68,7 +68,7 @@ extern const char* AP_PASSWORD;
 #define PINO_TRIG             32
 #define PINO_ECHO             33
 #define PINO_SENSOR_VAZAO     34
-#define PINO_LED_VERDE        12
+#define PINO_LED_VERDE        18
 #define PINO_LED_AMARELO      14
 #define PINO_LED_VERMELHO     25
 #define PINO_CHAVE_MANUAL     35

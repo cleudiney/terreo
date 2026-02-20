@@ -59,12 +59,16 @@ void setup() {
   Serial.println("\n✅ Sistema inicializado com sucesso!");
   Serial.print("📅 Data/hora atual: ");
   Serial.println(getDataHoraAtual());
-  
+  controleAutomaticoBombas();
       // primeira leitura real
-         lerTodosSensores();
+      // lerTodosSensores();
 
      // envia relatório completo de inicialização
          enviarMensagemBoot();
+              // verificarInterrupcoesManuais();
+      // controleAutomaticoBombas();
+       
+      //verificarSegurancaBombas();
 
   if (modoAP) {
     Serial.print("📶 Modo AP - IP: ");
@@ -75,10 +79,10 @@ void setup() {
   }
   //==================== inicializar webserver ====================================
   //============== incluso em 15/01/2025 as 17h47min 
-  loopWebServer();
+    loopWebServer();
 
-  verificarTimeoutSessao();
-    inicializarWebServer();  
+    verificarTimeoutSessao();
+      inicializarWebServer();  
 }
 
 // ===================== LOOP =====================
@@ -86,9 +90,9 @@ void setup() {
         // 1. Manter conexão WiFi
         verificarConexao();
         
-        // 2. Ler sensores (a cada 2 segundos)
+        // 2. Ler sensores (a cada 20 segundos)
         static unsigned long ultimaLeituraSensores = 0;
-        if (millis() - ultimaLeituraSensores > 2000) {
+        if (millis() - ultimaLeituraSensores > 20000) {
         lerTodosSensores();
         ultimaLeituraSensores = millis();
         
@@ -105,13 +109,13 @@ void setup() {
         atualizarLedsStatus();
         
         // 4. Verificar interrupções manuais
-        verificarInterrupcoesManuais();
-        
+       // verificarInterrupcoesManuais();
+     
         // 5. Controle automático de bombas
-        controleAutomaticoBombas();
+       // controleAutomaticoBombas();
         
         // 6. Verificação de segurança das bombas
-        verificarSegurancaBombas();
+       // verificarSegurancaBombas();
         
         // 7. Estatísticas
         loopEstatisticas();
@@ -120,5 +124,5 @@ void setup() {
         // 9. DuckDns
         verificarDuckDNS();   
 
-  delay(10);
+  delay(1000);
 }
