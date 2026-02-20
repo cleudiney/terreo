@@ -43,7 +43,19 @@ void apiStatus() {
        + String(estadoAtual.bombaBAtiva ? "true" : "false") + ",";
 
   json += "\"vazaoEntrada\":"
-       + String(estadoAtual.vazaoEntrada ? "true" : "false");
+       + String(estadoAtual.vazaoEntrada ? "true" : "false") + ",";
+
+  float volumeAtualLitros =
+      (estadoAtual.nivelPercentual / 100.0f) * VOLUME_TOTAL_L;
+
+  json += "\"vazaoCalculadaLMin\":"
+       + String(vazaoCalculada, 1) + ",";
+
+  json += "\"volumeTotalLitros\":"
+       + String(VOLUME_TOTAL_L, 1) + ",";
+
+  json += "\"volumeAtualLitros\":"
+       + String(volumeAtualLitros, 1);
 
   json += "}"; // caixa
 

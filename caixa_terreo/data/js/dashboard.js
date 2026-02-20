@@ -53,7 +53,8 @@ function atualizarDashboard(data) {
   setText('waterPercentage', `${c.nivelPercentual.toFixed(1)}%`);
   setText('nivelAltura', `${c.nivelCm.toFixed(1)} cm`);
   setText('nivelValue', `${c.nivelCm.toFixed(1)} cm`);
-  setText('volumeValue', `${calcularVolumeEstimado(c.nivelPercentual)} L`);
+  const volumeTotal = Number(c.volumeTotalLitros) || getVolumeTotalLitros();
+  setText('volumeValue', `${calcularVolumeEstimado(c.nivelPercentual, volumeTotal)} L`);
 
   atualizarTanque(c.nivelPercentual);
 
@@ -72,11 +73,15 @@ function atualizarDashboard(data) {
   );
 
   verificarAlerta(c);
+  atualizarEstimativaEnchimento(c, volumeTotal);
 }
 
-function calcularVolumeEstimado(nivelPercentual) {
-  const VOLUME_TOTAL_L = 20000;
-  const volume = (nivelPercentual / 100) * VOLUME_TOTAL_L;
+function getVolumeTotalLitros() {
+  return ((200 - 30) * 355 * 415) / 1000;
+}
+
+function calcularVolumeEstimado(nivelPercentual, volumeTotalLitros) {
+  const volume = (nivelPercentual / 100) * volumeTotalLitros;
   return Math.round(volume);
 }
 
@@ -102,10 +107,41 @@ function verificarAlerta(caixa) {
   if (!faixa) return;
 
   if (caixa.nivelPercentual <= 50 && caixa.vazaoEntrada === false) {
+    faixa.textContent = '🚨 ATENÇÃO: sem fornecimento de água! Verifique COPASA ou o registro geral.';
+    faixa.classList.remove('oculto');
+  } else if (caixa.nivelPercentual <= 50 && caixa.vazaoEntrada === true) {
+    faixa.textContent = '✅ Bóia de água ativada: caixa abaixo de 50% e enchendo.';
     faixa.classList.remove('oculto');
   } else {
     faixa.classList.add('oculto');
   }
+}
+
+function atualizarEstimativaEnchimento(caixa, volumeTotalLitros) {
+  const el = document.getElementById('tempoEstimado');
+  if (!el) return;
+
+  const vazao = Number(caixa.vazaoCalculadaLMin);
+  if (!(caixa.nivelPercentual < 100) || !Number.isFinite(vazao) || vazao <= 0) {
+    el.innerText = '';
+    return;
+  }
+
+  const litrosFaltantes = ((100 - caixa.nivelPercentual) / 100) * volumeTotalLitros;
+  const minutos = litrosFaltantes / vazao;
+  if (!Number.isFinite(minutos) || minutos <= 0) {
+    el.innerText = '';
+    return;
+  }
+
+  el.innerText = `Estimativa de enchimento: ${formatarDuracao(minutos)} (${vazao.toFixed(1)} L/min)`;
+}
+
+function formatarDuracao(minutosTotal) {
+  const horas = Math.floor(minutosTotal / 60);
+  const minutos = Math.round(minutosTotal % 60);
+  if (horas <= 0) return `${minutos} min`;
+  return `${horas}h ${minutos}min`;
 }
 
 /* ================= HELPERS ================= */

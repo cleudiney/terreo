@@ -84,7 +84,7 @@ bool botaoEmergenciaPressionado = false;
 float vazaoTotalDiaria = 0.0;
 
 float vazaoCalculada    = 0.0;
-float ultimoNivelVazao  = 0.0;
+float ultimoNivelVazao  = -1.0;
 unsigned long ultimoTempoVazao = 0;
 
 // =====================================================
