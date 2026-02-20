@@ -90,8 +90,8 @@ void verificarDuckDNS() {
 // ======= INICIALIZAÇÃO =======
 void iniciarDuckDNS() {
   Serial.println("\n🦆 [DuckDNS] INICIANDO SERVICO");
-  Serial.println("   Dominio: edificioaquarios.duckdns.org");
-  Serial.println("   Token: 00a4f00e-4f6a-43f1-8c50-ac0aaa3af2de");
+  Serial.println("   Dominio: " + DUCKDNS_DOMAIN + ".duckdns.org");
+  Serial.println("   Token: " + DUCKDNS_TOKEN);
   Serial.println("   Atualização: 5 minutos");
   
   // Força primeira atualização no próximo loop
@@ -102,8 +102,8 @@ void iniciarDuckDNS() {
 // ======= STATUS =======
 void mostrarStatusDuckDNS() {
   Serial.println("\n=== STATUS DUCKDNS ===");
-  Serial.println("🌐 Dominio: edificioaquarios.duckdns.org");
-  Serial.println("🔑 Token: 00a4f00e-4f6a-43f1-8c50-ac0aaa3af2de");
+  Serial.println("🌐 Dominio: " + DUCKDNS_DOMAIN + ".duckdns.org");
+  Serial.println("🔑 Token: " + DUCKDNS_TOKEN);
   Serial.print("📡 Internet: "); Serial.println(hasInternet ? "✅ CONECTADA" : "❌ OFFLINE");
   Serial.print("⏰ Próxima atualização: ");
   
