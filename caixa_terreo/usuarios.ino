@@ -71,6 +71,7 @@ void inicializarBancoUsuarios() {
     File f = SPIFFS.open("/dados/usuarios.dat", FILE_WRITE);
     f.println("adm;aquarios2025!;admin");
     f.println("sindico;aquarios23!;sindico");
+    f.println("subsindico;aquarios23!;subsindico");
     f.println("zelador;aquarios9999#;zelador");
     f.close();
 
@@ -290,6 +291,7 @@ void processarLogin() {
   nivelAcessoLogadoEnum =
     nivel == "admin"   ? ACESSO_ADMIN :
     nivel == "sindico" ? ACESSO_SINDICO :
+    nivel == "subsindico" ? ACESSO_SUBSINDICO :
     nivel == "zelador" ? ACESSO_ZELADOR :
                           ACESSO_NENHUM;
 

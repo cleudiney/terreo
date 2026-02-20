@@ -31,6 +31,9 @@
   <div id="navbar"></div>
 
   <main class="container mt-4">
+    <div class="alert alert-danger fw-bold text-center" role="alert">
+      Desconsiderar dados dos dias anteriores a 20/02/2026; considerar estatisticas apenas apos 10 de marco de 2026.
+    </div>
 
     <h2 class="mb-4 text-center">
       <i class="bi bi-graph-up"></i>
@@ -107,7 +110,7 @@
   <!-- sessão -->
   <script src="/js/auth-guard.js"></script>
   <script>
-    protegerPagina(['admin','sindico']);
+    protegerPagina(['admin','sindico','subsindico']);
   </script>
 
   <!-- navbar -->

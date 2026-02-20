@@ -1,0 +1,6 @@
+2026-02-19 11:00:00;evento;Status programado do sistema (demo);sistema
+2026-03-09 18:10:00;urgente;Caixa abaixo de 50% sem fornecimento;disparos
+2026-03-10 10:00:00;urgente;Sem vazao e nivel abaixo de alerta (40%);disparos
+2026-03-10 18:00:00;critica;Nivel critico abaixo de 20% sem vazao;disparos
+2026-03-11 10:00:00;evento;Boia ativa: caixa abaixo de 50% e enchendo;disparos
+2026-03-12 06:00:00;resolvido;Nivel recuperado apos reposicao;sistema

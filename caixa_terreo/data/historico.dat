@@ -1,0 +1,10 @@
+2026-02-19;11:00;status_programado;55.3;false;false
+2026-03-09;18:10;abaixo50_sem_vazao;48.1;false;false
+2026-03-10;06:05;status_programado;44.7;false;false
+2026-03-10;10:00;emergencia_abaixo40_sem_vazao;39.5;false;true
+2026-03-10;18:00;emergencia_abaixo20_sem_vazao;18.9;false;true
+2026-03-11;06:00;status_programado;33.8;false;false
+2026-03-11;10:00;abaixo50_enchendo;35.5;true;false
+2026-03-12;05:00;status_programado;47.2;true;false
+2026-03-12;06:00;abaixo50_enchendo;49.0;true;false
+2026-03-13;06:00;status_programado;33.2;true;false

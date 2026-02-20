@@ -5,6 +5,28 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 
+bool avisoImplementacaoAtivo() {
+  String data = getDataAtual(); // esperado: YYYY-MM-DD
+  if (data.length() != 10 || data[4] != '-' || data[7] != '-') {
+    return false;
+  }
+
+  int ano = data.substring(0, 4).toInt();
+  int mes = data.substring(5, 7).toInt();
+  int dia = data.substring(8, 10).toInt();
+  int yyyymmdd = (ano * 10000) + (mes * 100) + dia;
+
+  return yyyymmdd <= 20260225;
+}
+
+String getAvisoImplementacao() {
+  if (!avisoImplementacaoAtivo()) return "";
+
+  String aviso = "Sistema da caixa de agua terreo sendo implementado!\n";
+  aviso += "considerar apenas mensagens apos 26/02/2026.\n\n";
+  return aviso;
+}
+
 // =====================================================
 // CABEÇALHO PADRÃO DO SISTEMA
 // =====================================================
@@ -55,7 +77,7 @@ void enviarWhatsappTodos(const String& mensagem) {
     return;
   }
 
-  String msgFinal = mensagem + getPropaganda();
+  String msgFinal = getAvisoImplementacao() + mensagem + getPropaganda();
 
   enviarWhatsappFormatado(CALLMEBOT_TEL1, CALLMEBOT_APIKEY1, msgFinal);
   //delay(1500);

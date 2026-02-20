@@ -82,6 +82,14 @@
         </div>
 
         <div class="mb-3">
+          <label class="form-label">Subsíndico</label>
+          <input type="password" id="passSubsindico" class="form-control mb-2">
+          <button class="btn btn-warning" onclick="setPassword('subsindico')">
+            Alterar senha
+          </button>
+        </div>
+
+        <div class="mb-3">
           <label class="form-label">Visitante</label>
           <input type="password" id="passVisitante" class="form-control mb-2">
           <button class="btn btn-warning" onclick="setPassword('visitante')">
@@ -108,7 +116,7 @@
   <script src="/js/auth-guard.js"></script>
   <script>
     // Admin e Síndico podem acessar
-    protegerPagina(['admin', 'sindico']);
+    protegerPagina(['admin', 'sindico', 'subsindico']);
   </script>
 
   <!-- JS da página -->
@@ -151,6 +159,7 @@
       const campo = {
         admin: 'passAdmin',
         sindico: 'passSindico',
+        subsindico: 'passSubsindico',
         visitante: 'passVisitante'
       }[tipo];
 

@@ -5,7 +5,7 @@
 // ===================================================
 const nivel = localStorage.getItem("authNivel");
 
-if (nivel !== "admin" && nivel !== "sindico") {
+if (nivel !== "admin" && nivel !== "sindico" && nivel !== "subsindico") {
   document.body.innerHTML =
     "<h4>⛔ Acesso negado</h4><p>Você não tem permissão.</p>";
   throw new Error("Acesso negado");

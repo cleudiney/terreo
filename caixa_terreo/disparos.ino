@@ -31,6 +31,8 @@ public:
 private:
   static constexpr const char* ARQ_ESTADO = "/disparos_estado.dat";
   static constexpr const char* ARQ_HISTORICO = "/disparos_historico.dat";
+  static constexpr const char* ARQ_HISTORICO_DEMO = "/historico.dat";
+  static constexpr const char* ARQ_REGISTROS_DEMO = "/registros.dat";
 
   EstadoDisparosDia estado = {
     "", "", 0UL,
@@ -44,6 +46,14 @@ private:
     }
     if (!SPIFFS.exists(ARQ_HISTORICO)) {
       File f = SPIFFS.open(ARQ_HISTORICO, FILE_WRITE);
+      if (f) f.close();
+    }
+    if (!SPIFFS.exists(ARQ_HISTORICO_DEMO)) {
+      File f = SPIFFS.open(ARQ_HISTORICO_DEMO, FILE_WRITE);
+      if (f) f.close();
+    }
+    if (!SPIFFS.exists(ARQ_REGISTROS_DEMO)) {
+      File f = SPIFFS.open(ARQ_REGISTROS_DEMO, FILE_WRITE);
       if (f) f.close();
     }
   }
@@ -92,6 +102,16 @@ private:
     return msg;
   }
 
+  String faixaHoraByInt(int h) const {
+    if (h >= 5 && h <= 7) return "amanhecer";
+    if (h >= 8 && h <= 10) return "manha";
+    if (h >= 11 && h <= 13) return "almoco";
+    if (h >= 14 && h <= 16) return "tarde";
+    if (h >= 17 && h <= 19) return "anoitecer";
+    if (h >= 20 && h <= 23) return "noite";
+    return "madrugada";
+  }
+
   void registrarHistorico(const String& evento, bool emergencia) {
     File f = SPIFFS.open(ARQ_HISTORICO, FILE_APPEND);
     if (!f) return;
@@ -108,6 +128,26 @@ private:
 
     f.print(linha);
     f.close();
+
+    File hf = SPIFFS.open(ARQ_HISTORICO_DEMO, FILE_APPEND);
+    if (hf) {
+      hf.print(linha);
+      hf.close();
+    }
+
+    File rf = SPIFFS.open(ARQ_REGISTROS_DEMO, FILE_APPEND);
+    if (rf) {
+      String estado = getEstadoString();
+      String faixa = faixaHoraByInt(getHoraInt());
+      String reg =
+        getDataAtual() + ";" +
+        getHoraAtual() + ";" +
+        String(estadoAtual.nivelPercentual, 1) + ";" +
+        String(estadoAtual.nivelCm, 1) + ";" +
+        estado + ";" + faixa + "\n";
+      rf.print(reg);
+      rf.close();
+    }
   }
 
   void dispararEmergenciaSeNovo(

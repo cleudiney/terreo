@@ -53,7 +53,7 @@ static NivelAcesso obterNivelMinimoHtml(const String& path) {
       path == "/controle.html" ||
       path == "/registros.html") 
       {
-    return ACESSO_SINDICO;
+    return ACESSO_SUBSINDICO;
   }
 
   if (path == "/index.html" ||
@@ -119,6 +119,9 @@ void inicializarWebServer() {
   server.on("/api/usuarios", HTTP_POST, apiCriarUsuario);
   server.on("/api/usuarios", HTTP_DELETE, apiExcluirUsuario);
   server.on("/api/status", HTTP_GET, apiStatus);
+  server.on("/api/wifi-scan", HTTP_GET, apiWifiScan);
+  server.on("/api/wifi-connect", HTTP_POST, apiWifiConnect);
+  server.on("/api/set-password", HTTP_POST, apiSetPassword);
 
   // ================= ROTAS =================
   server.on("/", HTTP_GET, []() {
@@ -141,6 +144,10 @@ void inicializarWebServer() {
   server.on("/historico.html", HTTP_GET, []() { servirArquivo("/historico.html"); });
   server.on("/pontos.html", HTTP_GET, []() { servirArquivo("/pontos.html"); });
   server.on("/registros.html", HTTP_GET, []() { servirArquivo("/registros.html"); });
+  server.on("/pontos.dat", HTTP_GET, []() { servirArquivo("/pontos.dat"); });
+  server.on("/avisos.dat", HTTP_GET, []() { servirArquivo("/avisos.dat"); });
+  server.on("/historico.dat", HTTP_GET, []() { servirArquivo("/historico.dat"); });
+  server.on("/registros.dat", HTTP_GET, []() { servirArquivo("/registros.dat"); });
   server.on("/login.html", HTTP_GET, []() { servirArquivo("/login.html"); });
   server.on("/login-zero.html", HTTP_GET, []() { servirArquivo("/login-zero.html"); });
   server.on("/login-localstorage.html", HTTP_GET, []() { servirArquivo("/login-localstorage.html"); });

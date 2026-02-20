@@ -47,6 +47,7 @@ extern NivelAcesso nivelAcessoLogadoEnum;
 #define ARQ_USUARIOS   "/dados/usuarios.dat"
 #define ARQ_AVISOS     "/dados/avisos.dat"
 #define ARQ_REGISTROS  "/dados/registros.dat"
+#define ARQ_REDES      "/dados/redes.dat"
 // =====================================================
 // =================== IDENTIDADE DO SISTEMA (WHATSAPP / LOGS / WEB)
 // =====================================================
@@ -210,6 +211,9 @@ void processarLogout();
 void apiListarUsuarios();
 void apiCriarUsuario();
 void apiExcluirUsuario();
+void apiWifiScan();
+void apiWifiConnect();
+void apiSetPassword();
 
 // ======================= SEGURANÇA ====================
 bool exigirNivel(NivelAcesso minimo);

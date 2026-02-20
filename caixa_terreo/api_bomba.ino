@@ -18,7 +18,7 @@ void processarControleBombas() {
   String comando = server.arg("comando");
   String usuario = usuarioLogado; // 👈 essencial
 
- if (!exigeNivel(ACESSO_SINDICO)) {
+ if (!exigeNivel(ACESSO_SUBSINDICO)) {
   server.send(403, "application/json",
               "{\"success\":false,\"msg\":\"Permissão negada\"}");
   return;
