@@ -1,0 +1,22 @@
+{
+  "name": "Monitor Caixa d'Agua - Terreo",
+  "short_name": "Caixa Terreo",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0b1f33",
+  "theme_color": "#1976d2",
+  "description": "Monitoramento e controle da caixa de agua do terreo.",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

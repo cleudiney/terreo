@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Pontos do Dia - Caixa d'Água</title>
+  <title>Pontos do Dia - Caixa d'Ãgua</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- CSS -->
@@ -31,20 +31,20 @@
 
   <h2 class="text-center mb-4">
     <i class="bi bi-calendar-day"></i>
-    Pontos de Medição do Dia
+    Pontos de MediÃ§Ã£o do Dia
   </h2>
 
-  <!-- CONTEÚDO -->
+  <!-- CONTEÃšDO -->
   <div id="conteudo">
     <div class="loading">
       Carregando pontos do dia...
     </div>
   </div>
 
-  <!-- GRÁFICO -->
+  <!-- GRÃFICO -->
   <div class="card mt-4">
     <div class="card-header">
-      <i class="bi bi-graph-up"></i> Evolução do Nível
+      <i class="bi bi-graph-up"></i> EvoluÃ§Ã£o do NÃ­vel
     </div>
     <div class="card-body">
       <canvas id="graficoNivel" height="110"></canvas>
@@ -57,9 +57,18 @@
 <script src="/js/jquery-3.7.1.min.js"></script>
 <script src="/js/popper.min.js"></script>
 <script src="/js/bootstrap.min.js"></script>
-<script src="/js/chart.min.js"></script>
+<script>
+  function loadChartFromCDN() {
+    if (window.Chart) return;
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+    s.defer = true;
+    document.head.appendChild(s);
+  }
+</script>
+<script src="/js/chart.min.js" onerror="loadChartFromCDN()"></script>
 
-<!-- Segurança -->
+<!-- SeguranÃ§a -->
 <script src="/js/auth-guard.js"></script>
 <script>
   protegerPagina(['admin','sindico','subsindico','zelador']);
@@ -71,7 +80,7 @@
 <!-- Loader -->
 <script src="/js/data-loader.js"></script>
 
-<!-- Script da página -->
+<!-- Script da pÃ¡gina -->
 <script>
 let grafico = null;
 
@@ -90,8 +99,8 @@ dataLoader.afterLoad = function(pontos) {
         <thead>
           <tr>
             <th>Hora</th>
-            <th>Nível (%)</th>
-            <th>Vazão</th>
+            <th>NÃ­vel (%)</th>
+            <th>VazÃ£o</th>
             <th>Status</th>
           </tr>
         </thead>
@@ -112,7 +121,19 @@ dataLoader.afterLoad = function(pontos) {
   html += `</tbody></table></div>`;
   container.innerHTML = html;
 
-  // ========= gráfico =========
+  // ========= grÃ¡fico =========
+  if (typeof Chart === 'undefined') {
+    const cardBody = document.querySelector('#graficoNivel')?.parentElement;
+    if (cardBody) {
+      cardBody.innerHTML = `
+        <div class="alert alert-warning mb-0">
+          Grafico indisponivel: biblioteca Chart.js nao carregada.
+        </div>
+      `;
+    }
+    return;
+  }
+
   const labels = pontos.map(p => p.hora);
   const niveis = pontos.map(p => p.nivel);
 
@@ -127,7 +148,7 @@ dataLoader.afterLoad = function(pontos) {
     data: {
       labels,
       datasets: [{
-        label: 'Nível da Caixa (%)',
+        label: 'NÃ­vel da Caixa (%)',
         data: niveis,
         tension: 0.3,
         fill: true
@@ -154,3 +175,4 @@ dataLoader.afterLoad = function(pontos) {
 
 </body>
 </html>
+

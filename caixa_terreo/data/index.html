@@ -1,10 +1,13 @@
-<!--Index.html  -->
+﻿<!--Index.html  -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitor Caixa d'Água</title>
+    <title>Monitor Caixa d'Ãgua</title>
+    <meta name="theme-color" content="#1976d2">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <link href="/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
@@ -33,7 +36,7 @@
             background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
         }
         
-        /* Tanque de água animado */
+        /* Tanque de Ã¡gua animado */
         .caixa-container {
             position: relative;
             height: 300px;
@@ -66,12 +69,12 @@
             animation: wave 3s infinite linear;
         }
         
-        /* Cores baseadas no nível */
+        /* Cores baseadas no nÃ­vel */
         .agua.baixo { background: linear-gradient(to top, #dc3545, #e83e8c); }
         .agua.medio { background: linear-gradient(to top, #ffc107, #fd7e14); }
         .agua.alto { background: linear-gradient(to top, #28a745, #20c997); }
         
-        /* Animação da ondinha */
+        /* AnimaÃ§Ã£o da ondinha */
         @keyframes wave {
             from { transform: translateX(0); }
             to { transform: translateX(-10px); }
@@ -226,7 +229,7 @@
             margin-bottom: 4px;
         }
         
-        /* Animações */
+        /* AnimaÃ§Ãµes */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -265,7 +268,7 @@
             }
         }
         
-        /* Indicador de conexão */
+        /* Indicador de conexÃ£o */
         .connection-status {
             display: inline-block;
             width: 10px;
@@ -296,31 +299,31 @@
         <div class="container">
             <a class="navbar-brand" href="#">
                 <span class="connection-status" id="connectionStatus"></span>
-                💧 Monitor Caixa d'Água
+                ðŸ’§ Monitor Caixa d'Ãgua
             </a>
             <div class="navbar-nav ml-auto d-flex align-items-center">
                 <span class="navbar-text mr-3" id="userInfo">
-                    👤 -- 
+                    ðŸ‘¤ -- 
                 </span>
                 <span class="navbar-text mr-3" id="currentTime">
-                    ⏰ --:--
+                    â° --:--
                 </span>
                 <button class="nav-link btn btn-outline-light btn-sm ml-2" id="logoutBtn">
-                    🚪 Sair
+                    ðŸšª Sair
                 </button>
             </div>
         </div>
     </nav>
 
     <div class="container mt-4">
-        <!-- Cartão Principal -->
+        <!-- CartÃ£o Principal -->
         <div class="card status-card">
             <div class="card-body">
                 <h4 class="card-title text-center mb-4">
-                    📊 Status em Tempo Real
+                    ðŸ“Š Status em Tempo Real
                 </h4>
                 
-                <!-- Tanque de Água Animado -->
+                <!-- Tanque de Ãgua Animado -->
                 <div class="caixa-container">
                     <div class="caixa">
                         <div class="agua" id="agua"></div>
@@ -328,11 +331,11 @@
                     <div class="water-percentage" id="waterPercentage">--%</div>
                 </div>
                 
-                <!-- Estatísticas -->
+                <!-- EstatÃ­sticas -->
                 <div class="stats-grid">
                     <div class="stat-item">
                         <div class="stat-value" id="nivelValue">--</div>
-                        <div class="stat-label">Nível (cm)</div>
+                        <div class="stat-label">NÃ­vel (cm)</div>
                     </div>
                     <div class="stat-item">
                         <div class="stat-value" id="volumeValue">--</div>
@@ -344,7 +347,7 @@
                     </div>
                     <div class="stat-item">
                         <div class="stat-value" id="emergenciaStatus">--</div>
-                        <div class="stat-label">Emergência</div>
+                        <div class="stat-label">EmergÃªncia</div>
                     </div>
 					<div>
 						<div id="statusVazao">--</div>
@@ -354,7 +357,7 @@
                 
                 <!-- Status de Alerta -->
                 <div class="alert-status alert-normal" id="alertStatus">
-                    ✅ Sistema operando normalmente
+                    âœ… Sistema operando normalmente
                 </div>
 				<div id="alertaVazao" class="alerta-vazao oculto">
 				  Aguardando leitura dos sensores...
@@ -362,43 +365,43 @@
 
                 <div class="text-center mt-3">
                     <button class="btn btn-primary btn-lg" id="medirBtn">
-                        📏 Medir Agora
+                        ðŸ“ Medir Agora
                     </button>
                 </div>
                 
                 <div class="last-update" id="lastUpdate">
-                    Última atualização: --
+                    Ãšltima atualizaÃ§Ã£o: --
                 </div>
             </div>
         </div>
 
-        <!-- Navegação Melhorada -->
+        <!-- NavegaÃ§Ã£o Melhorada -->
         <div class="card">
             <div class="card-body">
-                <h6 class="card-title text-center mb-3">📋 Navegação Rápida</h6>
+                <h6 class="card-title text-center mb-3">ðŸ“‹ NavegaÃ§Ã£o RÃ¡pida</h6>
                 <div class="nav-grid">
                     <a href="index.html" class="nav-btn active">
-                        <div>🏠</div>
+                        <div>ðŸ </div>
                         <small>Principal</small>
                     </a>
                     <a href="estatisticas.html" class="nav-btn">
-                        <div>📊</div>
-                        <small>Estatísticas</small>
+                        <div>ðŸ“Š</div>
+                        <small>EstatÃ­sticas</small>
                     </a>
                     <a href="historico.html" class="nav-btn">
-                        <div>📅</div>
-                        <small>Histórico</small>
+                        <div>ðŸ“…</div>
+                        <small>HistÃ³rico</small>
                     </a>
                     <a href="pontos.html" class="nav-btn">
-                        <div>📋</div>
+                        <div>ðŸ“‹</div>
                         <small>Pontos</small>
                     </a>
                     <a href="avisos.html" class="nav-btn">
-                        <div>⚠️</div>
+                        <div>âš ï¸</div>
                         <small>Avisos</small>
                     </a>
                     <a href="adm.html" class="nav-btn">
-                        <div>⚙️</div>
+                        <div>âš™ï¸</div>
                         <small>Admin</small>
                     </a>
                 </div>
@@ -412,6 +415,7 @@
 	<script>
 	  protegerPagina(['admin','sindico','subsindico','zelador']);
 	</script>
+    <script src="/js/pwa-register.js"></script>
 	<script src="/js/dashboard.js"></script>
    </body>
 </html>

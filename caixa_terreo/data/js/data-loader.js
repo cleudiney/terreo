@@ -79,6 +79,7 @@ const dataLoader = {
     });
   }
 };
+const chartRefs = {};
 
 function renderResumo(id, dados) {
   if (!dados.length) {
@@ -178,6 +179,8 @@ function renderHistorico(lista) {
       <div class="col-md-4"><div class="stats-card">Ultimo nivel: <b>${lista[lista.length - 1].percentual.toFixed(1)}%</b></div></div>
     `;
   }
+
+  renderHistoricoChart(lista);
 }
 
 function renderEstatisticas(registros) {
@@ -203,6 +206,73 @@ function renderEstatisticas(registros) {
   renderResumo('stat-mes', mes);
   renderFaixas(hoje);
   renderPicos(registros);
+  renderEstatisticasChart(registros);
+}
+
+function renderHistoricoChart(lista) {
+  if (typeof Chart === 'undefined') return;
+  const canvas = document.getElementById('graficoHistorico');
+  if (!canvas) return;
+
+  const labels = lista.map((r) => `${r.data} ${r.hora}`);
+  const valores = lista.map((r) => r.percentual);
+
+  if (chartRefs.historico) chartRefs.historico.destroy();
+  chartRefs.historico = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Nivel (%)',
+        data: valores,
+        tension: 0.25,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: true } }
+    }
+  });
+}
+
+function renderEstatisticasChart(registros) {
+  if (typeof Chart === 'undefined') return;
+  const canvas = document.getElementById('graficoEstatisticas');
+  if (!canvas) return;
+
+  const ordenados = [...registros].sort((a, b) => {
+    const ta = new Date(`${a.data}T${a.hora}`).getTime();
+    const tb = new Date(`${b.data}T${b.hora}`).getTime();
+    return ta - tb;
+  });
+
+  const labels = ordenados.map((r) => `${r.data} ${r.hora}`);
+  const valores = ordenados.map((r) => r.percentual);
+
+  if (chartRefs.estatisticas) chartRefs.estatisticas.destroy();
+  chartRefs.estatisticas = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Percentual da caixa',
+        data: valores,
+        tension: 0.25,
+        fill: false
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          min: 0,
+          max: 100,
+          ticks: { callback: (v) => `${v}%` }
+        }
+      }
+    }
+  });
 }
 
 function renderPicos(registros) {

@@ -79,11 +79,19 @@
       </div>
     </div>
 
+    <div class="card mt-4">
+      <div class="card-header">Distribuicao por Tipo</div>
+      <div class="card-body">
+        <canvas id="graficoAvisos" height="100"></canvas>
+      </div>
+    </div>
+
   </main>
 
   <!-- JS -->
   <script src="/js/jquery-3.7.1.min.js"></script>
   <script src="/js/bootstrap.min.js"></script>
+  <script src="/js/chart.min.js"></script>
 
   <!-- Segurança -->
   <script src="/js/auth-guard.js"></script>
@@ -100,10 +108,12 @@
   <!-- Filtros -->
   <script>
     let avisos = [];
+    let graficoAvisos = null;
 
     dataLoader.afterLoad = function(dados) {
       avisos = dados || [];
       renderizarAvisos(avisos);
+      atualizarGraficoAvisos(avisos);
     };
 
     function renderizarAvisos(lista) {
@@ -148,6 +158,40 @@
       });
 
       renderizarAvisos(filtrados);
+      atualizarGraficoAvisos(filtrados);
+    }
+
+    function atualizarGraficoAvisos(lista) {
+      if (typeof Chart === 'undefined') return;
+      const canvas = document.getElementById('graficoAvisos');
+      if (!canvas) return;
+
+      const cont = { critico: 0, urgente: 0, resolvido: 0, evento: 0, controle: 0 };
+      lista.forEach(a => {
+        const t = (a.tipo || 'evento').toLowerCase();
+        if (typeof cont[t] === 'number') cont[t]++;
+      });
+
+      const labels = ['Critico', 'Urgente', 'Resolvido', 'Evento', 'Controle'];
+      const data = [cont.critico, cont.urgente, cont.resolvido, cont.evento, cont.controle];
+
+      if (graficoAvisos) graficoAvisos.destroy();
+      graficoAvisos = new Chart(canvas, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Quantidade',
+            data
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: { beginAtZero: true, ticks: { precision: 0 } }
+          }
+        }
+      });
     }
   </script>
 

@@ -148,6 +148,7 @@ void inicializarWebServer() {
   server.on("/avisos.dat", HTTP_GET, []() { servirArquivo("/avisos.dat"); });
   server.on("/historico.dat", HTTP_GET, []() { servirArquivo("/historico.dat"); });
   server.on("/registros.dat", HTTP_GET, []() { servirArquivo("/registros.dat"); });
+  server.on("/manifest.webmanifest", HTTP_GET, []() { servirArquivo("/manifest.webmanifest"); });
   server.on("/login.html", HTTP_GET, []() { servirArquivo("/login.html"); });
   server.on("/login-zero.html", HTTP_GET, []() { servirArquivo("/login-zero.html"); });
   server.on("/login-localstorage.html", HTTP_GET, []() { servirArquivo("/login-localstorage.html"); });
@@ -159,6 +160,7 @@ void inicializarWebServer() {
   // Isso NÃO interfere nas rotas acima
   server.serveStatic("/css/", SPIFFS, "/css/");
   server.serveStatic("/js/", SPIFFS, "/js/");
+  server.serveStatic("/icons/", SPIFFS, "/icons/");
   server.serveStatic("/partials/", SPIFFS, "/partials/");
 
   // ================= FALLBACK =================
