@@ -48,6 +48,7 @@ extern NivelAcesso nivelAcessoLogadoEnum;
 #define ARQ_AVISOS     "/dados/avisos.dat"
 #define ARQ_REGISTROS  "/dados/registros.dat"
 #define ARQ_REDES      "/dados/redes.dat"
+#define ARQ_VAZOES     "/vazoes.dat"
 // =====================================================
 // =================== IDENTIDADE DO SISTEMA (WHATSAPP / LOGS / WEB)
 // =====================================================

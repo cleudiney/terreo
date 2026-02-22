@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Vazoes - Caixa d'Agua</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/navbar.css">
+
+  <script>
+    window.DATA_CONFIG = {
+      type: 'vazoes',
+      file: 'vazoes.dat',
+      target: '#conteudo'
+    };
+  </script>
+</head>
+<body class="bg-light fade-in">
+  <div id="navbar"></div>
+
+  <main class="container mt-4">
+    <h2 class="mb-4 text-center">Historico de Vazoes (30 min)</h2>
+
+    <div id="conteudo">
+      <div class="text-center text-muted py-4">Carregando vazoes...</div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header">Evolucao da Vazao (L/h)</div>
+      <div class="card-body">
+        <canvas id="graficoVazoes" height="110"></canvas>
+      </div>
+    </div>
+  </main>
+
+  <script src="/js/jquery-3.7.1.min.js"></script>
+  <script src="/js/bootstrap.min.js"></script>
+  <script src="/js/chart.min.js"></script>
+  <script src="/js/auth-guard.js"></script>
+  <script>
+    protegerPagina(['admin','sindico','subsindico','zelador']);
+  </script>
+  <script src="/js/navbar.js"></script>
+  <script src="/js/data-loader.js"></script>
+</body>
+</html>

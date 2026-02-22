@@ -50,6 +50,7 @@ static NivelAcesso obterNivelMinimoHtml(const String& path) {
       path == "/avisos.html" ||
       path == "/historico.html" ||
       path == "/pontos.html" ||
+      path == "/vazoes.html" ||
       path == "/controle.html" ||
       path == "/registros.html") 
       {
@@ -60,6 +61,7 @@ static NivelAcesso obterNivelMinimoHtml(const String& path) {
       path == "/avisos.html" ||
       path == "/historico.html" ||
       path == "/pontos.html" ||
+      path == "/vazoes.html" ||
       path == "/controle.html" ||
       path == "/registros.html") {
     return ACESSO_ZELADOR;
@@ -143,11 +145,13 @@ void inicializarWebServer() {
   server.on("/estatisticas.html", HTTP_GET, []() { servirArquivo("/estatisticas.html"); });
   server.on("/historico.html", HTTP_GET, []() { servirArquivo("/historico.html"); });
   server.on("/pontos.html", HTTP_GET, []() { servirArquivo("/pontos.html"); });
+  server.on("/vazoes.html", HTTP_GET, []() { servirArquivo("/vazoes.html"); });
   server.on("/registros.html", HTTP_GET, []() { servirArquivo("/registros.html"); });
   server.on("/pontos.dat", HTTP_GET, []() { servirArquivo("/pontos.dat"); });
   server.on("/avisos.dat", HTTP_GET, []() { servirArquivo("/avisos.dat"); });
   server.on("/historico.dat", HTTP_GET, []() { servirArquivo("/historico.dat"); });
   server.on("/registros.dat", HTTP_GET, []() { servirArquivo("/registros.dat"); });
+  server.on("/vazoes.dat", HTTP_GET, []() { servirArquivo("/vazoes.dat"); });
   server.on("/manifest.webmanifest", HTTP_GET, []() { servirArquivo("/manifest.webmanifest"); });
   server.on("/login.html", HTTP_GET, []() { servirArquivo("/login.html"); });
   server.on("/login-zero.html", HTTP_GET, []() { servirArquivo("/login-zero.html"); });

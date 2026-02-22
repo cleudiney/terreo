@@ -22,6 +22,7 @@ const dataLoader = {
     if (type === 'historico') return this.parseHistorico(linhas);
     if (type === 'estatisticas') return this.parseRegistros(linhas);
     if (type === 'pontos') return this.parsePontos(linhas);
+    if (type === 'vazoes') return this.parseVazoes(linhas);
     return [];
   },
 
@@ -41,13 +42,13 @@ const dataLoader = {
 
   parseHistorico(linhas) {
     return linhas.map((l) => {
-      const [data, hora, evento, percentual, boia, emergencia] = l.split(';');
+      const [data, hora, evento, percentual, vazao, emergencia] = l.split(';');
       return {
         data: data || '',
         hora: hora || '',
         evento: evento || '',
         percentual: Number(percentual) || 0,
-        boia: boia === 'true',
+        vazao: vazao === 'true',
         emergencia: emergencia === 'true'
       };
     });
@@ -77,9 +78,63 @@ const dataLoader = {
         status: status || ''
       };
     });
+  },
+
+  parseVazoes(linhas) {
+    return linhas.map((l) => {
+      const [data, hora, nivelAtual, nivelAnterior, variacao, vazaoLh, entrada] = l.split(';');
+      return {
+        data: data || '',
+        hora: hora || '',
+        nivelAtual: Number(nivelAtual) || 0,
+        nivelAnterior: Number(nivelAnterior) || 0,
+        variacao: Number(variacao) || 0,
+        vazaoLh: Number(vazaoLh) || 0,
+        entrada: entrada === 'true'
+      };
+    });
   }
 };
 const chartRefs = {};
+
+function parseDataHoraLocal(data, hora = '00:00:00') {
+  if (!data) return null;
+  const h = (hora || '00:00:00').trim();
+  const isoLike = data.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoLike) return new Date(`${data}T${h}`);
+
+  const brLike = data.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (brLike) {
+    const [, d, m, y] = brLike;
+    return new Date(`${y}-${m}-${d}T${h}`);
+  }
+  return null;
+}
+
+function formatarDataBR(dataIso) {
+  const dt = parseDataHoraLocal(dataIso, '00:00:00');
+  if (!dt || Number.isNaN(dt.getTime())) return dataIso || '--';
+  return dt.toLocaleDateString('pt-BR');
+}
+
+function formatarDataHoraBR(data, hora) {
+  const dt = parseDataHoraLocal(data, hora);
+  if (!dt || Number.isNaN(dt.getTime())) return `${data || '--'} ${hora || ''}`.trim();
+  return dt.toLocaleString('pt-BR');
+}
+
+function getHojeBrasilIso() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Sao_Paulo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(new Date());
+  const y = parts.find((p) => p.type === 'year')?.value;
+  const m = parts.find((p) => p.type === 'month')?.value;
+  const d = parts.find((p) => p.type === 'day')?.value;
+  return `${y}-${m}-${d}`;
+}
 
 function renderResumo(id, dados) {
   if (!dados.length) {
@@ -101,6 +156,11 @@ function renderResumo(id, dados) {
 function renderFaixas(dados) {
   const tbody = document.getElementById('faixas-horarias');
   if (!tbody) return;
+
+  if (!dados.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Sem dados para hoje.</td></tr>';
+    return;
+  }
 
   const mapa = {};
   dados.forEach((d) => {
@@ -151,18 +211,18 @@ function renderHistorico(lista) {
             <th>Hora</th>
             <th>Evento</th>
             <th>Nivel</th>
-            <th>Boia</th>
+            <th>Vazao</th>
             <th>Emergencia</th>
           </tr>
         </thead>
         <tbody>
           ${lista.map((r) => `
             <tr>
-              <td>${r.data}</td>
+              <td>${formatarDataBR(r.data)}</td>
               <td>${r.hora}</td>
               <td>${r.evento}</td>
               <td>${r.percentual.toFixed(1)}%</td>
-              <td>${r.boia ? 'SIM' : 'NAO'}</td>
+              <td>${r.vazao ? 'SIM' : 'NAO'}</td>
               <td>${r.emergencia ? 'SIM' : 'NAO'}</td>
             </tr>`).join('')}
         </tbody>
@@ -184,8 +244,8 @@ function renderHistorico(lista) {
 }
 
 function renderEstatisticas(registros) {
-  const agora = new Date();
-  const hojeStr = agora.toISOString().slice(0, 10);
+  const hojeStr = getHojeBrasilIso();
+  const agora = parseDataHoraLocal(hojeStr, '12:00:00') || new Date();
 
   const inicioSemana = new Date(agora);
   inicioSemana.setDate(agora.getDate() - ((agora.getDay() + 6) % 7));
@@ -195,10 +255,10 @@ function renderEstatisticas(registros) {
   const mes = [];
 
   registros.forEach((r) => {
-    const d = new Date(`${r.data}T${r.hora}`);
+    const d = parseDataHoraLocal(r.data, r.hora);
     if (r.data === hojeStr) hoje.push(r);
-    if (!Number.isNaN(d.getTime()) && d >= inicioSemana) semana.push(r);
-    if (!Number.isNaN(d.getTime()) && d.getMonth() === agora.getMonth()) mes.push(r);
+    if (d && !Number.isNaN(d.getTime()) && d >= inicioSemana) semana.push(r);
+    if (d && !Number.isNaN(d.getTime()) && d.getMonth() === agora.getMonth()) mes.push(r);
   });
 
   renderResumo('stat-hoje', hoje);
@@ -214,7 +274,7 @@ function renderHistoricoChart(lista) {
   const canvas = document.getElementById('graficoHistorico');
   if (!canvas) return;
 
-  const labels = lista.map((r) => `${r.data} ${r.hora}`);
+  const labels = lista.map((r) => formatarDataHoraBR(r.data, r.hora));
   const valores = lista.map((r) => r.percentual);
 
   if (chartRefs.historico) chartRefs.historico.destroy();
@@ -247,7 +307,7 @@ function renderEstatisticasChart(registros) {
     return ta - tb;
   });
 
-  const labels = ordenados.map((r) => `${r.data} ${r.hora}`);
+  const labels = ordenados.map((r) => formatarDataHoraBR(r.data, r.hora));
   const valores = ordenados.map((r) => r.percentual);
 
   if (chartRefs.estatisticas) chartRefs.estatisticas.destroy();
@@ -329,15 +389,15 @@ function renderPicos(registros) {
   });
 
   const quedaTxt = maiorQueda.atual
-    ? `${Math.abs(maiorQueda.delta).toFixed(1)}% em ${maiorQueda.atual.data} ${maiorQueda.atual.hora}`
+    ? `${Math.abs(maiorQueda.delta).toFixed(1)}% em ${formatarDataHoraBR(maiorQueda.atual.data, maiorQueda.atual.hora)}`
     : 'Sem queda relevante';
 
   const recTxt = maiorRecuperacao.atual
-    ? `${maiorRecuperacao.delta.toFixed(1)}% em ${maiorRecuperacao.atual.data} ${maiorRecuperacao.atual.hora}`
+    ? `${maiorRecuperacao.delta.toFixed(1)}% em ${formatarDataHoraBR(maiorRecuperacao.atual.data, maiorRecuperacao.atual.hora)}`
     : 'Sem recuperacao relevante';
 
   const menorTxt = menorNivel
-    ? `${menorNivel.percentual.toFixed(1)}% em ${menorNivel.data} ${menorNivel.hora}`
+    ? `${menorNivel.percentual.toFixed(1)}% em ${formatarDataHoraBR(menorNivel.data, menorNivel.hora)}`
     : '-';
 
   el.innerHTML = `
@@ -350,6 +410,63 @@ function renderPicos(registros) {
   `;
 }
 
+function renderVazoes(lista) {
+  const c = document.getElementById('conteudo');
+  if (!c) return;
+
+  if (!lista.length) {
+    c.innerHTML = '<div class="alert alert-info text-center">Sem dados de vazao.</div>';
+    return;
+  }
+
+  c.innerHTML = `
+    <div class="table-responsive">
+      <table class="table table-striped align-middle">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Hora</th>
+            <th>Nivel Atual</th>
+            <th>Nivel Anterior</th>
+            <th>Variacao</th>
+            <th>Vazao (L/h)</th>
+            <th>Entrada</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${lista.map((r) => `
+            <tr>
+              <td>${formatarDataBR(r.data)}</td>
+              <td>${r.hora}</td>
+              <td>${r.nivelAtual.toFixed(1)}%</td>
+              <td>${r.nivelAnterior.toFixed(1)}%</td>
+              <td>${r.variacao.toFixed(1)} p.p.</td>
+              <td>${r.vazaoLh.toFixed(1)}</td>
+              <td>${r.entrada ? 'SIM' : 'NAO'}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  if (typeof Chart !== 'undefined') {
+    const canvas = document.getElementById('graficoVazoes');
+    if (canvas) {
+      const labels = lista.map((r) => formatarDataHoraBR(r.data, r.hora));
+      const valores = lista.map((r) => r.vazaoLh);
+      if (chartRefs.vazoes) chartRefs.vazoes.destroy();
+      chartRefs.vazoes = new Chart(canvas, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{ label: 'Vazao (L/h)', data: valores, tension: 0.2 }]
+        },
+        options: { responsive: true }
+      });
+    }
+  }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   const cfg = window.DATA_CONFIG;
   if (!cfg?.type) return;
@@ -359,6 +476,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (cfg.type === 'estatisticas') renderEstatisticas(dados);
     if (cfg.type === 'historico') renderHistorico(dados);
+    if (cfg.type === 'vazoes') renderVazoes(dados);
 
     if (typeof dataLoader.afterLoad === 'function') {
       dataLoader.afterLoad(dados);

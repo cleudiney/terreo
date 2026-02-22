@@ -33,11 +33,14 @@ private:
   static constexpr const char* ARQ_HISTORICO = "/disparos_historico.dat";
   static constexpr const char* ARQ_HISTORICO_DEMO = "/historico.dat";
   static constexpr const char* ARQ_REGISTROS_DEMO = "/registros.dat";
+  static constexpr const char* ARQ_VAZOES_DEMO = ARQ_VAZOES;
 
   EstadoDisparosDia estado = {
     "", "", 0UL,
     false, false, false, false
   };
+  float ultimoNivelVazao30 = -1.0f;
+  long ultimoSlotVazao30 = -1;
 
   void garantirArquivos() {
     if (!SPIFFS.exists(ARQ_ESTADO)) {
@@ -54,6 +57,10 @@ private:
     }
     if (!SPIFFS.exists(ARQ_REGISTROS_DEMO)) {
       File f = SPIFFS.open(ARQ_REGISTROS_DEMO, FILE_WRITE);
+      if (f) f.close();
+    }
+    if (!SPIFFS.exists(ARQ_VAZOES_DEMO)) {
+      File f = SPIFFS.open(ARQ_VAZOES_DEMO, FILE_WRITE);
       if (f) f.close();
     }
   }
@@ -97,9 +104,54 @@ private:
     msg += "Dia: " + getDataAtual() + "\n";
     msg += "Hora: " + getHoraAtual() + "\n";
     msg += "Nivel: " + String(estadoAtual.nivelPercentual, 1) + "%\n";
-    msg += "Boia ativa: ";
+    msg += "Vazao: ";
     msg += estadoAtual.vazaoEntrada ? "SIM" : "NAO";
     return msg;
+  }
+
+  long slotAtual30Min() const {
+    unsigned long unixTime = getUnixTime();
+    if (unixTime > 0) {
+      return (long)(unixTime / 1800UL);
+    }
+    return (long)(millis() / 1800000UL);
+  }
+
+  void registrarVazao30Min() {
+    long slot = slotAtual30Min();
+    if (slot == ultimoSlotVazao30) return;
+
+    float nivelAtual = estadoAtual.nivelPercentual;
+    float nivelAnterior = (ultimoNivelVazao30 < 0.0f) ? nivelAtual : ultimoNivelVazao30;
+    float variacao = nivelAtual - nivelAnterior;
+    float vazaoLh = vazaoCalculada * 60.0f;
+
+    String linha =
+      getDataAtual() + ";" +
+      getHoraAtual() + ";" +
+      String(nivelAtual, 1) + ";" +
+      String(nivelAnterior, 1) + ";" +
+      String(variacao, 1) + ";" +
+      String(vazaoLh, 1) + ";" +
+      String(estadoAtual.vazaoEntrada ? "true" : "false") + "\n";
+
+    File f = SPIFFS.open(ARQ_VAZOES_DEMO, FILE_APPEND);
+    if (f) {
+      f.print(linha);
+      f.close();
+    }
+
+    String msg;
+    msg += "Vazao: ";
+    msg += estadoAtual.vazaoEntrada ? "SIM\n" : "NAO\n";
+    msg += "Nivel: " + String(nivelAtual, 1) + "%\n";
+    msg += "Nivel Anterior: " + String(nivelAnterior, 1) + "%\n";
+    msg += "Variacao: " + String(variacao, 1) + " p.p.\n";
+    msg += "Ultima vazao calculada: " + String(vazaoLh, 1) + " litros por hora";
+    enviarEvento(msg);
+
+    ultimoNivelVazao30 = nivelAtual;
+    ultimoSlotVazao30 = slot;
   }
 
   String faixaHoraByInt(int h) const {
@@ -164,6 +216,8 @@ private:
   }
 
   void avaliarRegras() {
+    registrarVazao30Min();
+
     int h = getHoraInt();
     if (h >= 0 && h <= 23 && horaEhProgramada(h)) {
       uint32_t bitHora = (1UL << h);
@@ -186,7 +240,7 @@ private:
     if (abaixo50 && !semVazao && !estado.avisoAbaixo50Enchendo) {
       estado.avisoAbaixo50Enchendo = true;
       registrarHistorico("abaixo50_enchendo", false);
-      enviarEvento("Boia ativa: caixa abaixo de 50% e enchendo\n" + montarDetalhes());
+      enviarEvento("Vazao detectada: caixa abaixo de 50% e enchendo\n" + montarDetalhes());
     }
 
     if (!semVazao && estadoAtual.nivelPercentual > 55.0f) {

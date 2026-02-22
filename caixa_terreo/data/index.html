@@ -1,421 +1,193 @@
-﻿<!--Index.html  -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitor Caixa d'Ãgua</title>
-    <meta name="theme-color" content="#1976d2">
-    <link rel="manifest" href="/manifest.webmanifest">
-    <link rel="apple-touch-icon" href="/icons/icon-192.png">
-    <link href="/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        .navbar-brand {
-            font-weight: 600;
-        }
-        
-        .card {
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-            transition: transform 0.3s ease;
-        }
-        
-        .card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .status-card {
-            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        }
-        
-        /* Tanque de Ã¡gua animado */
-        .caixa-container {
-            position: relative;
-            height: 300px;
-            margin: 20px 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .caixa {
-            width: 160px;
-            height: 100%;
-            border: 3px solid #1976d2;
-            border-radius: 10px;
-            position: relative;
-            overflow: hidden;
-            background: #e0f7fa;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        }
-        
-        .agua {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: linear-gradient(to top, #007bff, #00bfff);
-            transition: height 1s ease, background 0.5s ease;
-            border-top-left-radius: 50% 20px;
-            border-top-right-radius: 50% 20px;
-            animation: wave 3s infinite linear;
-        }
-        
-        /* Cores baseadas no nÃ­vel */
-        .agua.baixo { background: linear-gradient(to top, #dc3545, #e83e8c); }
-        .agua.medio { background: linear-gradient(to top, #ffc107, #fd7e14); }
-        .agua.alto { background: linear-gradient(to top, #28a745, #20c997); }
-        
-        /* AnimaÃ§Ã£o da ondinha */
-        @keyframes wave {
-            from { transform: translateX(0); }
-            to { transform: translateX(-10px); }
-        }
-        
-        .water-percentage {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: #007bff;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-            z-index: 2;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-        
-        .stat-item {
-            text-align: center;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border-left: 4px solid #007bff;
-            transition: all 0.3s ease;
-        }
-        
-        .stat-item:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #007bff;
-        }
-        
-        .stat-label {
-            font-size: 0.9rem;
-            color: #6c757d;
-        }
-        
-        .btn-bomba {
-            font-size: 1.1rem;
-            font-weight: 600;
-            padding: 12px 20px;
-            margin: 5px;
-            border: none;
-            border-radius: 10px;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-bomba-1 {
-            background: linear-gradient(135deg, #28a745, #20c997);
-            color: white;
-        }
-        
-        .btn-bomba-2 {
-            background: linear-gradient(135deg, #ffc107, #fd7e14);
-            color: white;
-        }
-        
-        .btn-bomba-emergencia {
-            background: linear-gradient(135deg, #dc3545, #e83e8c);
-            color: white;
-        }
-        
-        .btn-bomba:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        
-        .btn-bomba:active {
-            transform: scale(0.95);
-        }
-        
-        .btn-bomba.active {
-            box-shadow: 0 0 0 3px rgba(0,123,255,0.5);
-        }
-        
-        .alert-status {
-            padding: 15px;
-            border-radius: 10px;
-            margin: 10px 0;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        
-        .alert-normal {
-            background: #d4edda;
-            color: #155724;
-            border-left: 4px solid #28a745;
-        }
-        
-        .alert-warning {
-            background: #fff3cd;
-            color: #856404;
-            border-left: 4px solid #ffc107;
-        }
-        
-        .alert-danger {
-            background: #f8d7da;
-            color: #721c24;
-            border-left: 4px solid #dc3545;
-        }
-        
-        .last-update {
-            font-size: 0.8rem;
-            color: #6c757d;
-            text-align: center;
-            margin-top: 10px;
-        }
-        
-        /* Navbar melhorada */
-        .nav-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
-        }
-        
-        .nav-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 10px 5px;
-            background: #f8f9fa;
-            border: 2px solid #dee2e6;
-            border-radius: 8px;
-            text-decoration: none;
-            color: #495057;
-            transition: all 0.3s ease;
-            font-size: 0.8rem;
-        }
-        
-        .nav-btn:hover {
-            background: #007bff;
-            color: white;
-            border-color: #007bff;
-            transform: translateY(-2px);
-            text-decoration: none;
-        }
-        
-        .nav-btn div {
-            font-size: 1.2rem;
-            margin-bottom: 4px;
-        }
-        
-        /* AnimaÃ§Ãµes */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .fade-in {
-            animation: fadeIn 0.5s ease-out;
-        }
-        
-        /* Responsividade */
-        @media (max-width: 768px) {
-            .caixa-container {
-                height: 250px;
-            }
-            
-            .caixa {
-                width: 120px;
-            }
-            
-            .water-percentage {
-                font-size: 2rem;
-            }
-            
-            .btn-bomba {
-                font-size: 1rem;
-                padding: 10px 15px;
-                margin: 3px;
-            }
-            
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .nav-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-        
-        /* Indicador de conexÃ£o */
-        .connection-status {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 5px;
-        }
-        
-        .connection-online {
-            background-color: #28a745;
-            animation: pulse 2s infinite;
-        }
-        
-        .connection-offline {
-            background-color: #dc3545;
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitor Caixa d'Agua</title>
+  <meta name="theme-color" content="#1976d2">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link href="/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/css/base.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    .card {
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    }
+    .caixa-container {
+      position: relative;
+      height: 280px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 16px 0;
+    }
+    .caixa {
+      width: 150px;
+      height: 100%;
+      border: 3px solid #1976d2;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #eaf7ff;
+      position: relative;
+    }
+    .agua {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 100%;
+      height: 0%;
+      transition: height 1s ease;
+      background: linear-gradient(to top, #1976d2, #4dabf7);
+    }
+    .agua.baixo { background: linear-gradient(to top, #dc3545, #ff6b6b); }
+    .agua.medio { background: linear-gradient(to top, #fd7e14, #ffc107); }
+    .agua.alto { background: linear-gradient(to top, #20c997, #28a745); }
+    .water-percentage {
+      position: absolute;
+      font-size: 2rem;
+      font-weight: 700;
+      color: #0d47a1;
+      text-shadow: 0 1px 2px rgba(255,255,255,0.7);
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+    }
+    .stat-item {
+      background: #f8f9fa;
+      border-left: 4px solid #1976d2;
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #0d47a1;
+    }
+    .stat-label {
+      font-size: 0.85rem;
+      color: #555;
+    }
+    .nav-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .nav-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px 6px;
+      border: 1px solid #dcdcdc;
+      border-radius: 8px;
+      text-decoration: none;
+      color: #333;
+      background: #fafafa;
+    }
+    .nav-btn:hover {
+      background: #1976d2;
+      color: #fff;
+      text-decoration: none;
+    }
+    @media (max-width: 768px) {
+      .nav-grid { grid-template-columns: repeat(2, 1fr); }
+      .caixa { width: 120px; }
+    }
+  </style>
 </head>
 <body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="#">
-                <span class="connection-status" id="connectionStatus"></span>
-                ðŸ’§ Monitor Caixa d'Ãgua
-            </a>
-            <div class="navbar-nav ml-auto d-flex align-items-center">
-                <span class="navbar-text mr-3" id="userInfo">
-                    ðŸ‘¤ -- 
-                </span>
-                <span class="navbar-text mr-3" id="currentTime">
-                    â° --:--
-                </span>
-                <button class="nav-link btn btn-outline-light btn-sm ml-2" id="logoutBtn">
-                    ðŸšª Sair
-                </button>
-            </div>
-        </div>
-    </nav>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="#">Monitor Caixa d'Agua</a>
+      <div class="navbar-nav ms-auto d-flex align-items-center">
+        <span class="navbar-text me-3" id="userInfo">Usuario: --</span>
+        <span class="navbar-text me-3" id="currentTime">Hora: --:--</span>
+        <button class="nav-link btn btn-outline-light btn-sm" id="logoutBtn">Sair</button>
+      </div>
+    </div>
+  </nav>
 
-    <div class="container mt-4">
-        <!-- CartÃ£o Principal -->
-        <div class="card status-card">
-            <div class="card-body">
-                <h4 class="card-title text-center mb-4">
-                    ðŸ“Š Status em Tempo Real
-                </h4>
-                
-                <!-- Tanque de Ãgua Animado -->
-                <div class="caixa-container">
-                    <div class="caixa">
-                        <div class="agua" id="agua"></div>
-                    </div>
-                    <div class="water-percentage" id="waterPercentage">--%</div>
-                </div>
-                
-                <!-- EstatÃ­sticas -->
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <div class="stat-value" id="nivelValue">--</div>
-                        <div class="stat-label">NÃ­vel (cm)</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="volumeValue">--</div>
-                        <div class="stat-label">Volume (L)</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="bombaStatus">--</div>
-                        <div class="stat-label">Status Bomba</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" id="emergenciaStatus">--</div>
-                        <div class="stat-label">EmergÃªncia</div>
-                    </div>
-					<div>
-						<div id="statusVazao">--</div>
-						<div id="tempoEstimado"></div>
-					</div>
-                </div>
-                
-                <!-- Status de Alerta -->
-                <div class="alert-status alert-normal" id="alertStatus">
-                    âœ… Sistema operando normalmente
-                </div>
-				<div id="alertaVazao" class="alerta-vazao oculto">
-				  Aguardando leitura dos sensores...
-				</div>
+  <div class="container mt-4">
+    <div class="card mb-3">
+      <div class="card-body">
+        <h4 class="text-center mb-3">Status em Tempo Real</h4>
 
-                <div class="text-center mt-3">
-                    <button class="btn btn-primary btn-lg" id="medirBtn">
-                        ðŸ“ Medir Agora
-                    </button>
-                </div>
-                
-                <div class="last-update" id="lastUpdate">
-                    Ãšltima atualizaÃ§Ã£o: --
-                </div>
-            </div>
+        <div class="caixa-container">
+          <div class="caixa"><div class="agua" id="agua"></div></div>
+          <div class="water-percentage" id="waterPercentage">--%</div>
         </div>
 
-        <!-- NavegaÃ§Ã£o Melhorada -->
-        <div class="card">
-            <div class="card-body">
-                <h6 class="card-title text-center mb-3">ðŸ“‹ NavegaÃ§Ã£o RÃ¡pida</h6>
-                <div class="nav-grid">
-                    <a href="index.html" class="nav-btn active">
-                        <div>ðŸ </div>
-                        <small>Principal</small>
-                    </a>
-                    <a href="estatisticas.html" class="nav-btn">
-                        <div>ðŸ“Š</div>
-                        <small>EstatÃ­sticas</small>
-                    </a>
-                    <a href="historico.html" class="nav-btn">
-                        <div>ðŸ“…</div>
-                        <small>HistÃ³rico</small>
-                    </a>
-                    <a href="pontos.html" class="nav-btn">
-                        <div>ðŸ“‹</div>
-                        <small>Pontos</small>
-                    </a>
-                    <a href="avisos.html" class="nav-btn">
-                        <div>âš ï¸</div>
-                        <small>Avisos</small>
-                    </a>
-                    <a href="adm.html" class="nav-btn">
-                        <div>âš™ï¸</div>
-                        <small>Admin</small>
-                    </a>
-                </div>
-            </div>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-value" id="nivelValue">--</div>
+            <div class="stat-label">Nivel (cm)</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="volumeValue">--</div>
+            <div class="stat-label">Volume (L)</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="bombaStatus">--</div>
+            <div class="stat-label">Status Bomba</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="emergenciaStatus">--</div>
+            <div class="stat-label">Emergencia</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value" id="statusVazao">--</div>
+            <div class="stat-label">Vazao Entrada</div>
+            <div id="tempoEstimado"></div>
+          </div>
         </div>
+
+        <div class="alert alert-success mt-3 mb-2" id="alertStatus">
+          Sistema operando normalmente
+        </div>
+        <div id="alertaVazao" class="alerta-vazao oculto">
+          Aguardando leitura dos sensores...
+        </div>
+
+        <div class="text-center mt-3">
+          <button class="btn btn-primary" id="medirBtn">Medir Agora</button>
+        </div>
+        <div class="text-center text-muted mt-2" id="lastUpdate">
+          Ultima atualizacao: --
+        </div>
+      </div>
     </div>
 
-	<script src="/js/jquery-3.7.1.min.js"></script>
-	<script src="/js/bootstrap.min.js"></script>
-	<script src="/js/auth-guard.js"></script>
-	<script>
-	  protegerPagina(['admin','sindico','subsindico','zelador']);
-	</script>
-    <script src="/js/pwa-register.js"></script>
-	<script src="/js/dashboard.js"></script>
-   </body>
+    <div class="card">
+      <div class="card-body">
+        <h6 class="text-center mb-3">Navegacao Rapida</h6>
+        <div class="nav-grid">
+          <a href="index.html" class="nav-btn"><small>Principal</small></a>
+          <a href="estatisticas.html" class="nav-btn"><small>Estatisticas</small></a>
+          <a href="historico.html" class="nav-btn"><small>Historico</small></a>
+          <a href="pontos.html" class="nav-btn"><small>Pontos</small></a>
+          <a href="vazoes.html" class="nav-btn"><small>Vazoes</small></a>
+          <a href="avisos.html" class="nav-btn"><small>Avisos</small></a>
+          <a href="adm.html" class="nav-btn"><small>Admin</small></a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/jquery-3.7.1.min.js"></script>
+  <script src="/js/bootstrap.min.js"></script>
+  <script src="/js/auth-guard.js"></script>
+  <script>
+    protegerPagina(['admin','sindico','subsindico','zelador']);
+  </script>
+  <script src="/js/pwa-register.js"></script>
+  <script src="/js/dashboard.js"></script>
+</body>
 </html>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'caixa-cache-v4';
+const CACHE_NAME = 'caixa-cache-v5';
 
 const urlsToCache = [
   '/',

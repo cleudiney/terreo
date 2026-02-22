@@ -2,9 +2,56 @@
 
 let timerStatus = null;
 
+function formatarDataHoraBrasil(valor) {
+  const d = parseDataHoraFlexivel(valor);
+  if (!d) return valor || '--:--';
+  return new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  }).format(d);
+}
+
+function formatarAgoraBrasil() {
+  return new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  }).format(new Date());
+}
+
+function parseDataHoraFlexivel(valor) {
+  if (!valor || typeof valor !== 'string') return null;
+
+  // yyyy-mm-dd HH:MM:SS
+  const isoLike = valor.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/);
+  if (isoLike) {
+    const [, y, m, d, hh, mm, ss] = isoLike;
+    return new Date(`${y}-${m}-${d}T${hh}:${mm}:${ss || '00'}`);
+  }
+
+  // dd/mm/yyyy HH:MM:SS
+  const brLike = valor.match(/^(\d{2})\/(\d{2})\/(\d{4})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/);
+  if (brLike) {
+    const [, d, m, y, hh, mm, ss] = brLike;
+    return new Date(`${y}-${m}-${d}T${hh}:${mm}:${ss || '00'}`);
+  }
+
+  const parsed = new Date(valor);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 /* ================= INIT ================= */
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('🚀 Dashboard iniciado (HTTP)');
+  console.log('Dashboard iniciado (HTTP)');
   atualizar();
   timerStatus = setInterval(atualizar, 3000);
 });
@@ -13,67 +60,75 @@ document.addEventListener('DOMContentLoaded', () => {
 async function atualizar() {
   try {
     const resp = await fetch('/api/status');
-    
-    // Se não autenticado (401), redirecionar para login
+
+    // Se nao autenticado (401), redirecionar para login
     if (resp.status === 401) {
-      console.warn('⛔ Sessão expirada (401)');
+      console.warn('Sessao expirada (401)');
       localStorage.clear();
-      window.location.replace("/login.html");
+      window.location.replace('/login.html');
       return;
     }
-    
+
     if (!resp.ok) {
-      console.warn('❌ Erro status', resp.status);
+      console.warn('Erro status', resp.status);
       return;
     }
 
     const payload = await resp.json();
     const data = payload?.data || payload;
     atualizarDashboard(data);
-
   } catch (e) {
-    console.warn('❌ Erro status', e);
+    console.warn('Erro status', e);
   }
 }
 
 /* ================= DASHBOARD ================= */
 function atualizarDashboard(data) {
-  if (!data.caixa) return;
+  if (!data || !data.caixa) return;
 
   const c = data.caixa;
 
-  // Usuário / Hora
+  // Usuario / Hora
   setText('usuarioAtivo', data.usuario || '---');
-  setText('userInfo', `👤 ${data.usuario || '---'}`);
+  setText('userInfo', `Usuario: ${data.usuario || '---'}`);
   setText('horaSistema', data.datahora || '--:--');
-  setText('currentTime', `⏰ ${data.datahora || '--:--'}`);
+  setText('currentTime', `Brasil: ${formatarDataHoraBrasil(data.datahora)}`);
 
-  // Nível
-  setText('nivelPercentual', `${c.nivelPercentual.toFixed(1)}%`);
-  setText('waterPercentage', `${c.nivelPercentual.toFixed(1)}%`);
-  setText('nivelAltura', `${c.nivelCm.toFixed(1)} cm`);
-  setText('nivelValue', `${c.nivelCm.toFixed(1)} cm`);
+  // Nivel
+  const nivelPercentual = Number(c.nivelPercentual) || 0;
+  const nivelCm = Number(c.nivelCm) || 0;
   const volumeTotal = Number(c.volumeTotalLitros) || getVolumeTotalLitros();
-  setText('volumeValue', `${calcularVolumeEstimado(c.nivelPercentual, volumeTotal)} L`);
 
-  atualizarTanque(c.nivelPercentual);
+  setText('nivelPercentual', `${nivelPercentual.toFixed(1)}%`);
+  setText('waterPercentage', `${nivelPercentual.toFixed(1)}%`);
+  setText('nivelAltura', `${nivelCm.toFixed(1)} cm`);
+  setText('nivelValue', `${nivelCm.toFixed(1)} cm`);
+  setText('volumeValue', `${calcularVolumeEstimado(nivelPercentual, volumeTotal)} L`);
+
+  atualizarTanque(nivelPercentual);
 
   // Bombas
   const statusBomba = c.bombaA || c.bombaB ? 'LIGADA' : 'DESLIGADA';
-  setText(
-    'statusBomba',
-    statusBomba
-  );
+  setText('statusBomba', statusBomba);
   setText('bombaStatus', statusBomba);
 
-  // Vazão
-  setText(
-    'statusVazao',
-    c.vazaoEntrada ? 'COM VAZÃO' : 'SEM VAZÃO'
-  );
+  // Emergencia
+  const emergencia = normalizarEmergencia(c.emergencia);
+  setText('emergenciaStatus', emergencia);
+
+  // Vazao
+  setText('statusVazao', c.vazaoEntrada ? 'COM VAZAO' : 'SEM VAZAO');
 
   verificarAlerta(c);
   atualizarEstimativaEnchimento(c, volumeTotal);
+  atualizarRodape(c);
+}
+
+function normalizarEmergencia(valor) {
+  if (typeof valor === 'string' && valor.trim()) return valor;
+  if (valor === true || valor === 1) return 'ATIVA';
+  if (valor === false || valor === 0) return 'NAO';
+  return '--';
 }
 
 function getVolumeTotalLitros() {
@@ -107,10 +162,10 @@ function verificarAlerta(caixa) {
   if (!faixa) return;
 
   if (caixa.nivelPercentual <= 50 && caixa.vazaoEntrada === false) {
-    faixa.textContent = '🚨 ATENÇÃO: sem fornecimento de água! Verifique COPASA ou o registro geral.';
+    faixa.textContent = 'ATENCAO: sem fornecimento de agua. Verifique COPASA ou o registro geral.';
     faixa.classList.remove('oculto');
   } else if (caixa.nivelPercentual <= 50 && caixa.vazaoEntrada === true) {
-    faixa.textContent = '✅ Bóia de água ativada: caixa abaixo de 50% e enchendo.';
+    faixa.textContent = 'Vazao detectada: caixa abaixo de 50% e enchendo.';
     faixa.classList.remove('oculto');
   } else {
     faixa.classList.add('oculto');
@@ -144,9 +199,31 @@ function formatarDuracao(minutosTotal) {
   return `${horas}h ${minutos}min`;
 }
 
+function atualizarRodape(caixa) {
+  const el = document.getElementById('lastUpdate');
+  if (!el) return;
+
+  el.innerText = `Ultima atualizacao: ${formatarAgoraBrasil()}`;
+
+  const alertEl = document.getElementById('alertStatus');
+  if (!alertEl) return;
+
+  if (caixa.nivelPercentual <= 20) {
+    alertEl.className = 'alert alert-danger mt-3 mb-2';
+    alertEl.innerText = 'Nivel critico';
+  } else if (caixa.nivelPercentual <= 50) {
+    alertEl.className = 'alert alert-warning mt-3 mb-2';
+    alertEl.innerText = 'Nivel baixo';
+  } else {
+    alertEl.className = 'alert alert-success mt-3 mb-2';
+    alertEl.innerText = 'Sistema operando normalmente';
+  }
+}
+
 /* ================= HELPERS ================= */
 function setText(id, txt) {
   const el = document.getElementById(id);
   if (el) el.innerText = txt;
 }
+
 /* ================= END DASHBOARD.JS ================= */
