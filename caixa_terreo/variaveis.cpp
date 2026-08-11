@@ -3,8 +3,8 @@
 // =====================================================
 // ===================== CREDENCIAIS ====================
 // =====================================================
-const char* SSID        = "esp32_caixa";
-const char* PASSWORD    = "Config123#";
+const char* SSID        = "VIVO AQUARIUS 2";
+const char* PASSWORD    = "197019Aq";
 const char* AP_SSID     = "caixa_agua_aquarios";
 const char* AP_PASSWORD = "@caixa#C1234c!";
 /*
@@ -50,6 +50,7 @@ unsigned long ultimoInfo     = 0;
 // =====================================================
 bool hasInternet = false;
 bool modoAP      = false;
+String modoIpAtual = "DHCP";
 
 WebServer server(WEB_SERVER_PORT);
 

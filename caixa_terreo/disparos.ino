@@ -148,7 +148,7 @@ private:
     msg += "Nivel Anterior: " + String(nivelAnterior, 1) + "%\n";
     msg += "Variacao: " + String(variacao, 1) + " p.p.\n";
     msg += "Ultima vazao calculada: " + String(vazaoLh, 1) + " litros por hora";
-    enviarEvento(msg);
+    enviarEventoPeriodico(msg);
 
     ultimoNivelVazao30 = nivelAtual;
     ultimoSlotVazao30 = slot;
@@ -224,7 +224,7 @@ private:
       if ((estado.horasStatusEnviadas & bitHora) == 0UL) {
         estado.horasStatusEnviadas |= bitHora;
         registrarHistorico("status_programado", false);
-        enviarEvento("Status programado do sistema\n" + montarDetalhes());
+        enviarEventoPeriodico("Status programado do sistema\n" + montarDetalhes());
       }
     }
 

@@ -19,12 +19,6 @@ void serialMonitorEstadoCaixa() {
   serialMonitor("   Vazão entrada: " +
                  String(estadoAtual.vazaoEntrada ? "SIM" : "NÃO"));
 
-  serialMonitor("   Bomba A: " +
-                 String(estadoAtual.bombaAAtiva ? "LIGADA" : "DESLIGADA"));
-
-  serialMonitor("   Bomba B: " +
-                 String(estadoAtual.bombaBAtiva ? "LIGADA" : "DESLIGADA"));
-
   serialMonitor("   Estado: " + getEstadoString());
 
   serialMonitor("=================================");

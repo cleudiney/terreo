@@ -17,6 +17,14 @@ String getStatusCaixa() {
   return "Estável";
 }
 
+float calcularNivelAgua() {
+  return estadoAtual.nivelPercentual;
+}
+
+float calcularVolume() {
+  return (estadoAtual.nivelPercentual / 100.0f) * VOLUME_TOTAL_L;
+}
+
 // =====================================================
 // INICIALIZAÇÃO
 // =====================================================

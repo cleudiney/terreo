@@ -36,12 +36,6 @@ void apiStatus() {
   json += "\"nivelCm\":"
        + String(estadoAtual.nivelCm, 1) + ",";
 
-  json += "\"bombaA\":"
-       + String(estadoAtual.bombaAAtiva ? "true" : "false") + ",";
-
-  json += "\"bombaB\":"
-       + String(estadoAtual.bombaBAtiva ? "true" : "false") + ",";
-
   json += "\"vazaoEntrada\":"
        + String(estadoAtual.vazaoEntrada ? "true" : "false") + ",";
 

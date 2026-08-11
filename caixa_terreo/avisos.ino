@@ -4,7 +4,7 @@
 // =====================================================
 // REGISTRAR AVISO
 // =====================================================
-void registrarAviso(String tipo, String mensagem, String usuario = "") {
+void registrarAviso(String tipo, String mensagem, String usuario) {
 
   // ===============================
   // Usuário automático

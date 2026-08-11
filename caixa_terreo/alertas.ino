@@ -57,11 +57,12 @@ void checarAlertasCriticos() {
       registrarAviso(
         "critica",
         "Vazamento detectado: " +
-        String(abs(vazao), 1) + " L/min",
-        ""
+        String(abs(vazao), 1) + " L/min\n" +
+        "Nivel: " + String(percentual, 1) + "%\n" +
+        "Verificar possiveis vazamentos",
+        "sistema"
       );
 
-      enviarAlertaVazamentoCritico(abs(vazao));
       tUltimaMensagemVazamento = millis();
     }
   }
@@ -84,7 +85,7 @@ void enviarAlertaEmergenciaNormalizada() {
     msg += "🔧 Retorno ao modo automático\n";
     msg += "🎉 Sistema estabilizado";
 
-    enviarWhatsappTodos(msg);
+    registrarAviso("normalizado", msg, "sistema");
   }
 }
 

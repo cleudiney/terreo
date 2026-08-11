@@ -7,6 +7,7 @@
 #include <WiFiUdp.h>
 #include <NTPClient.h>
 #include <WebServer.h>
+#include <EEPROM.h>
 
 // ==============================
 // Intervalos de notificação
@@ -39,6 +40,36 @@ extern bool autenticado;
 extern bool sessaoAtiva;
 extern String usuarioLogado;
 extern NivelAcesso nivelAcessoLogadoEnum;
+
+// =====================================================
+// ===================== PROTÓTIPOS DE NOTIFICAÇÃO =====
+// =====================================================
+String getHoraAtual();
+String getDataHoraAtual();
+String getDataAtual();
+int getHoraInt();
+unsigned long getUnixTime();
+String getUrlAcessoWeb();
+String getUrlDuckDNS();
+String getRodapeAcesso();
+bool enviarNtfy(const String& mensagem, const String& topico = "");
+void enviarWhatsappTodos(const String& mensagem, const String& topico = "");
+void enviarEvento(const String& texto);
+void enviarUrgente(const String& texto);
+void enviarCritico(const String& texto);
+void enviarResolvido(const String& texto);
+void enviarEventoPeriodico(const String& texto);
+void verificarComandosNtfy();
+void processarNotificacao(String tipo, String mensagem);
+extern const unsigned long INTERVALO_REPETICAO_URGENTE_MS;
+extern const unsigned long INTERVALO_REPETICAO_CRITICA_MS;
+extern const unsigned long INTERVALO_REPETICAO_INFO_MS;
+extern const unsigned long INTERVALO_REPETICAO_NORMALIZADO_MS;
+bool podeEnviarNotificacao(
+  const String& tipo,
+  const String& mensagem,
+  unsigned long intervaloMinimoMs
+);
 
 // =====================================================
 // ===================== DEFINIÇÕES BÁSICAS =============
@@ -132,6 +163,7 @@ struct EstadoCaixa {
 // =====================================================
 extern bool hasInternet;
 extern bool modoAP;
+extern String modoIpAtual;
 
 extern EstadoCaixa estadoAtual;
 
@@ -189,11 +221,13 @@ extern unsigned long ultimaAtividadeSessao;
 void inicializarWebServer();
 void loopWebServer();
 
+void lerTodosSensores();
+bool conectarWiFiComIp199(const String& ssid, const String& senha);
 float calcularNivelAgua();
 float calcularVolume();
 String getEstadoString();
 
-void registrarAviso(String tipo, String mensagem, String usuario);
+void registrarAviso(String tipo, String mensagem, String usuario = "");
 void inicializarDisparos();
 void loopDisparos();
 
@@ -214,6 +248,8 @@ void apiCriarUsuario();
 void apiExcluirUsuario();
 void apiWifiScan();
 void apiWifiConnect();
+bool salvarCredenciaisWiFiEEPROM(const String& ssid, const String& senha);
+bool carregarCredenciaisWiFiEEPROM(String& ssid, String& senha);
 void apiSetPassword();
 
 // ======================= SEGURANÇA ====================

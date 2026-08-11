@@ -1,9 +1,10 @@
 // =====================================================
 // INTERVALOS DE REPETIÇÃO
 // =====================================================
-const unsigned long INTERVALO_REPETICAO_URGENTE_MS = 10UL * 60UL * 1000UL;
-const unsigned long INTERVALO_REPETICAO_CRITICA_MS = 10UL * 60UL * 1000UL;
-const unsigned long INTERVALO_REPETICAO_INFO_MS    = 2UL * 60UL * 1000UL;
+extern const unsigned long INTERVALO_REPETICAO_URGENTE_MS = 10UL * 60UL * 1000UL;
+extern const unsigned long INTERVALO_REPETICAO_CRITICA_MS = 10UL * 60UL * 1000UL;
+extern const unsigned long INTERVALO_REPETICAO_INFO_MS    = 2UL * 60UL * 1000UL;
+extern const unsigned long INTERVALO_REPETICAO_NORMALIZADO_MS = 30UL * 60UL * 1000UL;
 
 // =====================================================
 // CONTROLE ANTI-SPAM (tipo + mensagem)
@@ -13,21 +14,30 @@ bool podeEnviarNotificacao(
   const String& mensagem,
   unsigned long intervaloMinimoMs
 ) {
-  static String ultimoTipo = "";
-  static String ultimaMensagem = "";
-  static unsigned long ultimoEnvioMs = 0;
+  static String ultimosTipos[12];
+  static String ultimasMensagens[12];
+  static unsigned long ultimosEnviosMs[12] = {0};
+  static int proximoSlot = 0;
 
-  bool mesmaNotificacao = (tipo == ultimoTipo && mensagem == ultimaMensagem);
+  for (int i = 0; i < 12; i++) {
+    bool mesmaNotificacao =
+      (tipo == ultimosTipos[i] && mensagem == ultimasMensagens[i]);
 
-  if (mesmaNotificacao &&
-      ultimoEnvioMs > 0 &&
-      (millis() - ultimoEnvioMs) < intervaloMinimoMs) {
-    return false;
+    if (mesmaNotificacao) {
+      if (ultimosEnviosMs[i] > 0 &&
+          (millis() - ultimosEnviosMs[i]) < intervaloMinimoMs) {
+        return false;
+      }
+
+      ultimosEnviosMs[i] = millis();
+      return true;
+    }
   }
 
-  ultimoTipo = tipo;
-  ultimaMensagem = mensagem;
-  ultimoEnvioMs = millis();
+  ultimosTipos[proximoSlot] = tipo;
+  ultimasMensagens[proximoSlot] = mensagem;
+  ultimosEnviosMs[proximoSlot] = millis();
+  proximoSlot = (proximoSlot + 1) % 12;
   return true;
 }
 
@@ -75,29 +85,28 @@ void processarNotificacao(String tipo, String mensagem) {
   if (tipo == "controle") return;
 
   if (tipo == "urgente") {
-    if (podeEnviarNotificacao(tipo, mensagem, INTERVALO_REPETICAO_URGENTE_MS)) {
-      enviarWhatsappTodos("⚠️ URGENTE\n" + mensagem);
-    }
+    enviarUrgente(mensagem);
     return;
   }
 
   if (tipo == "critica") {
-    if (podeEnviarNotificacao(tipo, mensagem, INTERVALO_REPETICAO_CRITICA_MS)) {
-      enviarWhatsappTodos("🚨 CRÍTICO\n" + mensagem);
-    }
+    enviarCritico(mensagem);
     return;
   }
 
   if (tipo == "resolvido") {
-    if (podeEnviarNotificacao(tipo, mensagem, INTERVALO_REPETICAO_INFO_MS)) {
-      enviarWhatsappTodos("✅ RESOLVIDO\n" + mensagem);
-    }
+    enviarResolvido(mensagem);
     return;
   }
 
   if (tipo == "evento") {
-    if (podeEnviarNotificacao(tipo, mensagem, INTERVALO_REPETICAO_INFO_MS)) {
-      enviarWhatsappTodos("ℹ️ EVENTO\n" + mensagem);
+    enviarEvento(mensagem);
+    return;
+  }
+
+  if (tipo == "normalizado") {
+    if (podeEnviarNotificacao(tipo, mensagem, INTERVALO_REPETICAO_NORMALIZADO_MS)) {
+      enviarResolvido(mensagem);
     }
     return;
   }

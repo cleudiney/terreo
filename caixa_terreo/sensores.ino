@@ -143,7 +143,7 @@ void lerSensorUltrassom() {
 // LEITURA DA VAZÃO
 // =====================================================
 void IRAM_ATTR pulsoVazao() {
-  pulsosVazao++;
+  pulsosVazao = pulsosVazao + 1;
 }
 
 void lerSensorVazao() {

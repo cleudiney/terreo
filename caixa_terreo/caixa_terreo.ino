@@ -1,5 +1,7 @@
 #include "variaveis.h"
-
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 // ===================== SETUP =====================
 void setup() {
   Serial.begin(115200);
@@ -99,12 +101,10 @@ void setup() {
         ultimaLeituraSensores = millis();
         
         // Log do estado atual
-        Serial.printf("[%s] 📊 Nível: %.1f%% | Vazão: %s | Bomba A: %s | Bomba B: %s\n",
+        Serial.printf("[%s] 📊 Nível: %.1f%% | Vazão: %s\n",
                   getHoraAtual().c_str(),
                   estadoAtual.nivelPercentual,
-                  estadoAtual.vazaoEntrada ? "SIM" : "NÃO",
-                  estadoAtual.bombaAAtiva ? "LIGADA" : "DESLIGADA",
-                  estadoAtual.bombaBAtiva ? "LIGADA" : "DESLIGADA");
+                  estadoAtual.vazaoEntrada ? "SIM" : "NÃO");
         }
         
         // 3. Atualizar LEDs de status
@@ -127,6 +127,8 @@ void setup() {
         loopDisparos();
         // 10. DuckDns
         verificarDuckDNS();   
+        // 11. Comandos recebidos pelo topico ntfy de medicao
+        verificarComandosNtfy();
 
   delay(1000);
 }

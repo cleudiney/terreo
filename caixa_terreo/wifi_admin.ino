@@ -1,5 +1,15 @@
 #include "variaveis.h"
 
+static const int WIFI_EEPROM_SIZE = 128;
+static const int WIFI_EEPROM_MAGIC_ADDR = 0;
+static const int WIFI_EEPROM_SSID_LEN_ADDR = 4;
+static const int WIFI_EEPROM_SENHA_LEN_ADDR = 5;
+static const int WIFI_EEPROM_SSID_ADDR = 6;
+static const int WIFI_EEPROM_SENHA_ADDR = 39;
+static const int WIFI_EEPROM_MAX_SSID = 32;
+static const int WIFI_EEPROM_MAX_SENHA = 64;
+static const char WIFI_EEPROM_MAGIC[4] = {'W', 'F', 'I', '1'};
+
 static String jsonEscape(const String& s) {
   String out;
   out.reserve(s.length() + 8);
@@ -13,6 +23,83 @@ static String jsonEscape(const String& s) {
     }
   }
   return out;
+}
+
+bool salvarCredenciaisWiFiEEPROM(const String& ssid, const String& senha) {
+  if (ssid.isEmpty() || ssid.length() > WIFI_EEPROM_MAX_SSID ||
+      senha.length() > WIFI_EEPROM_MAX_SENHA) {
+    return false;
+  }
+
+  if (!EEPROM.begin(WIFI_EEPROM_SIZE)) {
+    Serial.println("❌ Falha ao iniciar EEPROM para salvar WiFi");
+    return false;
+  }
+
+  for (int i = 0; i < 4; i++) {
+    EEPROM.write(WIFI_EEPROM_MAGIC_ADDR + i, WIFI_EEPROM_MAGIC[i]);
+  }
+
+  EEPROM.write(WIFI_EEPROM_SSID_LEN_ADDR, ssid.length());
+  EEPROM.write(WIFI_EEPROM_SENHA_LEN_ADDR, senha.length());
+
+  for (int i = 0; i <= WIFI_EEPROM_MAX_SSID; i++) {
+    char c = (i < ssid.length()) ? ssid[i] : '\0';
+    EEPROM.write(WIFI_EEPROM_SSID_ADDR + i, c);
+  }
+
+  for (int i = 0; i <= WIFI_EEPROM_MAX_SENHA; i++) {
+    char c = (i < senha.length()) ? senha[i] : '\0';
+    EEPROM.write(WIFI_EEPROM_SENHA_ADDR + i, c);
+  }
+
+  bool ok = EEPROM.commit();
+  EEPROM.end();
+
+  if (ok) {
+    Serial.println("✅ Credenciais WiFi salvas na EEPROM");
+  } else {
+    Serial.println("❌ Falha ao gravar credenciais WiFi na EEPROM");
+  }
+
+  return ok;
+}
+
+bool carregarCredenciaisWiFiEEPROM(String& ssid, String& senha) {
+  ssid = "";
+  senha = "";
+
+  if (!EEPROM.begin(WIFI_EEPROM_SIZE)) {
+    Serial.println("❌ Falha ao iniciar EEPROM para ler WiFi");
+    return false;
+  }
+
+  for (int i = 0; i < 4; i++) {
+    if (EEPROM.read(WIFI_EEPROM_MAGIC_ADDR + i) != WIFI_EEPROM_MAGIC[i]) {
+      EEPROM.end();
+      return false;
+    }
+  }
+
+  int ssidLen = EEPROM.read(WIFI_EEPROM_SSID_LEN_ADDR);
+  int senhaLen = EEPROM.read(WIFI_EEPROM_SENHA_LEN_ADDR);
+
+  if (ssidLen <= 0 || ssidLen > WIFI_EEPROM_MAX_SSID ||
+      senhaLen < 0 || senhaLen > WIFI_EEPROM_MAX_SENHA) {
+    EEPROM.end();
+    return false;
+  }
+
+  for (int i = 0; i < ssidLen; i++) {
+    ssid += (char)EEPROM.read(WIFI_EEPROM_SSID_ADDR + i);
+  }
+
+  for (int i = 0; i < senhaLen; i++) {
+    senha += (char)EEPROM.read(WIFI_EEPROM_SENHA_ADDR + i);
+  }
+
+  EEPROM.end();
+  return !ssid.isEmpty();
 }
 
 static String extrairCampoJson(const String& body, const String& chave) {
@@ -90,22 +177,17 @@ void apiWifiConnect() {
     return;
   }
 
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid.c_str(), senha.c_str());
-
-  unsigned long inicio = millis();
-  const unsigned long timeout = 20000UL;
-  while (WiFi.status() != WL_CONNECTED && millis() - inicio < timeout) {
-    delay(500);
-  }
-
-  if (WiFi.status() == WL_CONNECTED) {
+  if (conectarWiFiComIp199(ssid, senha)) {
     hasInternet = true;
     modoAP = false;
 
+    bool salvoEEPROM = salvarCredenciaisWiFiEEPROM(ssid, senha);
     salvarRedeNoArquivo(ssid, senha);
 
-    String json = "{\"ok\":true,\"ip\":\"" + WiFi.localIP().toString() + "\"}";
+    String json = "{\"ok\":true,\"ip\":\"" + WiFi.localIP().toString() +
+                  "\",\"modoIp\":\"" + modoIpAtual +
+                  "\",\"gateway\":\"" + WiFi.gatewayIP().toString() +
+                  "\",\"eeprom\":" + String(salvoEEPROM ? "true" : "false") + "}";
     server.send(200, "application/json", json);
     return;
   }
